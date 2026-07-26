@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WKH District Intervention Dashboard</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="header">
+    <div class="header-content">
+      <h1 class="district-name">West Khasi Hills District</h1>
+      <p class="subtitle">IBCB/SISD/M&E/Farm/Non-Farm/FI Intervention Dashboard</p>
+      <div class="summary-stats" id="summaryStats"></div>
+    </div>
+  </header>
+
+  <main class="main">
+    <section class="map-section">
+      <h2 class="section-title">District Map</h2>
+      <p class="section-subtitle">Click on a block to view CLF details</p>
+      <div class="map-container">
+        <svg id="districtMap" viewBox="0 0 800 580" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+              <feDropShadow dx="1" dy="1" stdDeviation="2" flood-opacity="0.25"/>
+            </filter>
+          </defs>
+
+          <!-- Mawshynrut Block (Northwest) -->
+          <g class="block-group" data-block="Mawshynrut" filter="url(#shadow)">
+            <path class="block-area" d="M 0 0 L 320 0 L 350 120 L 300 250 L 100 230 L 0 140 Z"
+                  fill="#4caf50" stroke="#fff" stroke-width="2"/>
+            <text class="block-label" x="160" y="115" text-anchor="middle">Mawshynrut</text>
+            <text class="block-clfs" x="160" y="145" text-anchor="middle">7 CLFs</text>
+          </g>
+
+          <!-- Nongstoin Block (Central/East) -->
+          <g class="block-group" data-block="Nongstoin" filter="url(#shadow)">
+            <path class="block-area" d="M 320 0 L 800 0 L 800 350 L 620 420 L 350 380 L 300 250 L 350 120 Z"
+                  fill="#66bb6a" stroke="#fff" stroke-width="2"/>
+            <text class="block-label" x="560" y="190" text-anchor="middle">Nongstoin</text>
+            <text class="block-clfs" x="560" y="220" text-anchor="middle">13 CLFs</text>
+          </g>
+
+          <!-- Rambrai Block (West) -->
+          <g class="block-group" data-block="Rambrai" filter="url(#shadow)">
+            <path class="block-area" d="M 0 140 L 100 230 L 300 250 L 350 380 L 220 480 L 0 470 Z"
+                  fill="#81c784" stroke="#fff" stroke-width="2"/>
+            <text class="block-label" x="175" y="340" text-anchor="middle">Rambrai</text>
+            <text class="block-clfs" x="175" y="370" text-anchor="middle">5 CLFs</text>
+          </g>
+
+          <!-- RI-Muliang Block (South-Central) -->
+          <g class="block-group" data-block="RI-Muliang" filter="url(#shadow)">
+            <path class="block-area" d="M 220 480 L 350 380 L 620 420 L 800 350 L 800 580 L 420 580 Z"
+                  fill="#a5d6a7" stroke="#fff" stroke-width="2"/>
+            <text class="block-label" x="530" y="480" text-anchor="middle">RI-Muliang</text>
+            <text class="block-clfs" x="530" y="510" text-anchor="middle">4 CLFs</text>
+          </g>
+
+          <!-- Shallang Block (Southwest) -->
+          <g class="block-group" data-block="Shallang" filter="url(#shadow)">
+            <path class="block-area" d="M 0 470 L 220 480 L 420 580 L 0 580 Z"
+                  fill="#c8e6c9" stroke="#fff" stroke-width="2"/>
+            <text class="block-label" x="160" y="540" text-anchor="middle">Shallang</text>
+            <text class="block-clfs" x="160" y="568" text-anchor="middle">1 CLF</text>
+          </g>
+
+          <!-- Compass -->
+          <g transform="translate(745, 45)">
+            <circle cx="0" cy="0" r="22" fill="white" stroke="#2d8a4e" stroke-width="2"/>
+            <text x="0" y="-6" text-anchor="middle" font-size="11" fill="#2d8a4e" font-weight="bold">N</text>
+            <polygon points="0,-18 -4,-9 4,-9" fill="#2d8a4e"/>
+          </g>
+        </svg>
+
+        <!-- Legend -->
+        <div class="map-legend">
+          <h3>Blocks</h3>
+          <div class="legend-items" id="legendItems"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>Data sourced from WKH District Intervention Spreadsheet</p>
+  </footer>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
