@@ -14,7 +14,6 @@ function doGet(e) {
     var data = sheet.getDataRange().getValues();
     if (!data || data.length < 2) continue;
 
-    var header = data[0].join(" ").toLowerCase();
     var firstCell = data[0][0] ? data[0][0].toString().toLowerCase() : "";
 
     if (firstCell.indexOf("district") !== -1) {
@@ -42,14 +41,32 @@ function doGet(e) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
+function findCol(header, keywords) {
+  for (var i = 0; i < header.length; i++) {
+    var cell = header[i] ? header[i].toString().toLowerCase().trim() : "";
+    for (var k = 0; k < keywords.length; k++) {
+      if (cell.indexOf(keywords[k]) !== -1) return i;
+    }
+  }
+  return -1;
+}
+
 function parseBasicDetails(data) {
+  var header = data[0];
+  var colBlock = findCol(header, ["block"]);
+  var colCLF = findCol(header, ["clf name", "clf"]);
+  var colVO = findCol(header, ["vo"]);
+  var colSHG = findCol(header, ["shg"]);
+
+  if (colBlock === -1 || colCLF === -1) return [];
+
   var blocks = {};
   for (var i = 1; i < data.length; i++) {
     var row = data[i];
-    var blockName = (row[1] || "").toString().trim();
-    var clfName = (row[3] || "").toString().trim();
-    var vo = parseInt(row[4]) || 0;
-    var shg = parseInt(row[5]) || 0;
+    var blockName = (row[colBlock] || "").toString().trim();
+    var clfName = (row[colCLF] || "").toString().trim();
+    var vo = colVO !== -1 ? (parseInt(row[colVO]) || 0) : 0;
+    var shg = colSHG !== -1 ? (parseInt(row[colSHG]) || 0) : 0;
     if (!blockName || !clfName) continue;
     if (/\d+-block/i.test(blockName) || /\d+-clf/i.test(clfName)) continue;
 
@@ -65,10 +82,15 @@ function parseBasicDetails(data) {
 }
 
 function parseInterventions(data) {
+  var header = data[0];
+  var colBlock = findCol(header, ["block"]);
+  var colCLF = findCol(header, ["clf name", "clf"]);
+  var colName = findCol(header, ["intervention", "name of intervention"]);
+  var colBrief = findCol(header, ["brief"]);
+  var colImage = findCol(header, ["image", "link"]);
+
+  var hasBlockCol = colBlock !== -1 && colCLF !== -1;
   var results = [];
-  var header = data[0].join(" ").toLowerCase();
-  var hasBlockCol = header.indexOf("block") !== -1;
-  var hasClfCol = header.indexOf("clf") !== -1;
 
   for (var i = 1; i < data.length; i++) {
     var row = data[i];
@@ -76,19 +98,19 @@ function parseInterventions(data) {
 
     var block = "", clfName = "", intervention = "", brief = "", image = "";
 
-    if (hasBlockCol && hasClfCol) {
-      block = (row[1] || "").toString().trim();
-      clfName = (row[2] || "").toString().trim();
-      intervention = (row[3] || "").toString().trim();
-      brief = (row[4] || "").toString().trim();
-      image = (row[5] || "").toString().trim();
+    if (hasBlockCol) {
+      block = (row[colBlock] || "").toString().trim();
+      clfName = (row[colCLF] || "").toString().trim();
+      intervention = colName !== -1 ? (row[colName] || "").toString().trim() : "";
+      brief = colBrief !== -1 ? (row[colBrief] || "").toString().trim() : "";
+      image = colImage !== -1 ? (row[colImage] || "").toString().trim() : "";
     } else {
-      intervention = (row[1] || "").toString().trim();
-      brief = (row[2] || "").toString().trim();
-      image = (row[3] || "").toString().trim();
+      intervention = colName !== -1 ? (row[colName] || "").toString().trim() : "";
+      brief = colBrief !== -1 ? (row[colBrief] || "").toString().trim() : "";
+      image = colImage !== -1 ? (row[colImage] || "").toString().trim() : "";
     }
 
-    if (!intervention && !brief) continue;
+    if (!intervention && !brief && !block && !clfName) continue;
     if (/\d+-block/i.test(block) || /\d+-clf/i.test(clfName)) continue;
 
     results.push({

@@ -1,5 +1,5 @@
 // Google Apps Script Web App URL
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwAszo2tJG-00c8JdkgedaoGSDKiLlrPOHUpTgC75c64S1UtCQhDHTWREYGV6K4Ekg-cA/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw6SnXISZM0KaowpSYTCeaQzhBYwj5jejcQZl4qqvIRq8zhXtfcFxzfpwws74EyO94vzw/exec';
 
 const fallbackData = {
   district: "West Khasi Hills District",
