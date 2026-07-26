@@ -1,4 +1,7 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
+  // Load data (live from Apps Script or fallback)
+  await initDashboard();
+
   initSummary();
   renderLegend();
   initMapInteractions();
@@ -40,7 +43,7 @@ function renderLegend() {
 
   legendItems.innerHTML = dashboardData.blocks.map(block => `
     <div class="legend-item">
-      <div class="legend-color" style="background-color: ${blockColors[block.name]}"></div>
+      <div class="legend-color" style="background-color: ${blockColors[block.name] || '#ccc'}"></div>
       <span>${block.name} (${block.clfs.length} CLFs)</span>
     </div>
   `).join('');

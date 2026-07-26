@@ -1,4 +1,7 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
+  // Load data (live from Apps Script or fallback)
+  await initDashboard();
+
   const urlParams = new URLSearchParams(window.location.search);
   const blockName = urlParams.get('block');
 
@@ -124,15 +127,20 @@ function showInterventionModal(clf, type) {
         <div class="intervention-placeholder">
           <span class="placeholder-icon">&#x1F4CB;</span>
           <p>Intervention data pending</p>
+          <p class="placeholder-hint">Add data to the Google Sheet to populate this section</p>
         </div>
       </div>
     `;
   } else {
     const imageHtml = intervention.image
-      ? `<img src="${intervention.image}" alt="${intervention.name}" class="intervention-image">`
+      ? `<img src="${intervention.image}" alt="${intervention.name}" class="intervention-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+         <div class="intervention-placeholder" style="display:none;">
+           <span class="placeholder-icon">&#x1F5BC;</span>
+           <p>Image could not be loaded</p>
+         </div>`
       : `<div class="intervention-placeholder">
            <span class="placeholder-icon">&#x1F5BC;</span>
-           <p>Image not available</p>
+           <p>No image available</p>
          </div>`;
 
     body.innerHTML = `
