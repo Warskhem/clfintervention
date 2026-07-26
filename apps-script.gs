@@ -1,55 +1,19 @@
-// Google Apps Script - Copy this into your Google Sheet's Apps Script editor
-// Go to Extensions > Apps Script in your Google Sheet
-
 function doGet(e) {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var allSheets = ss.getSheets();
   var result = {};
-  var allSheets = sheet.getSheets();
 
-  // Log sheet names for debugging
-  var sheetNames = [];
-  for (var s = 0; s < allSheets.length; s++) {
-    sheetNames.push(s + ": " + allSheets[s].getName());
-  }
-  result.sheetNames = sheetNames;
-
-  // Basic Details sheet - try name match, fallback to index 0
-  var basicSheet = findSheet(sheet, ["Basic Details", "basic", "detail"]) || allSheets[0];
+  var basicSheet = allSheets[0];
   if (basicSheet) {
-    var basicData = basicSheet.getDataRange().getValues();
-    result.blocks = parseBasicDetails(basicData);
+    result.blocks = parseBasicDetails(basicSheet.getDataRange().getValues());
   } else {
     result.blocks = [];
   }
 
-  // Farm Intervention sheet
-  var farmSheet = findSheet(sheet, ["Farm Intervention", "farm intervention", "farm"]) || allSheets[1];
-  if (farmSheet) {
-    var farmData = farmSheet.getDataRange().getValues();
-    result.farmInterventions = parseInterventionsNew(farmData);
-  } else {
-    result.farmInterventions = [];
-  }
+  result.farmInterventions = allSheets.length > 1 ? parseInterventionsNew(allSheets[1].getDataRange().getValues()) : [];
+  result.nonFarmInterventions = allSheets.length > 2 ? parseInterventionsNew(allSheets[2].getDataRange().getValues()) : [];
+  result.fiInterventions = allSheets.length > 3 ? parseInterventionsNew(allSheets[3].getDataRange().getValues()) : [];
 
-  // Non Farm Intervention sheet
-  var nonFarmSheet = findSheet(sheet, ["Non Farm Intervention", "nonfarm", "non farm", "non-farm"]) || allSheets[2];
-  if (nonFarmSheet) {
-    var nonFarmData = nonFarmSheet.getDataRange().getValues();
-    result.nonFarmInterventions = parseInterventionsNew(nonFarmData);
-  } else {
-    result.nonFarmInterventions = [];
-  }
-
-  // FI Intervention sheet
-  var fiSheet = findSheet(sheet, ["FI Intervention", "fi intervention", "fi"]) || allSheets[3];
-  if (fiSheet) {
-    var fiData = fiSheet.getDataRange().getValues();
-    result.fiInterventions = parseInterventionsNew(fiData);
-  } else {
-    result.fiInterventions = [];
-  }
-
-  // Calculate summary
   result.summary = {
     blocks: result.blocks.length,
     clfs: 0,
@@ -70,20 +34,6 @@ function doGet(e) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-function findSheet(spreadsheet, names) {
-  var sheets = spreadsheet.getSheets();
-  for (var n = 0; n < names.length; n++) {
-    var search = names[n].toLowerCase().trim();
-    for (var i = 0; i < sheets.length; i++) {
-      var sheetName = sheets[i].getName().toLowerCase().trim();
-      if (sheetName.indexOf(search) !== -1) {
-        return sheets[i];
-      }
-    }
-  }
-  return null;
-}
-
 function parseBasicDetails(data) {
   var blocks = {};
 
@@ -99,11 +49,9 @@ function parseBasicDetails(data) {
     var blockLower = blockName.toLowerCase();
     var clfLower = clfName.toLowerCase();
 
-    if (blockLower === "total" || clfLower === "total" ||
-        blockLower.indexOf("block") !== -1 && blockLower.match(/\d/) ||
-        clfLower.indexOf("-clf") !== -1) {
-      continue;
-    }
+    if (blockLower === "total" || clfLower === "total") continue;
+    if (blockLower.indexOf("block") !== -1 && /\d/.test(blockLower)) continue;
+    if (/\d+-clf/.test(clfLower)) continue;
 
     if (!blocks[blockName]) {
       blocks[blockName] = {
@@ -129,15 +77,11 @@ function parseBasicDetails(data) {
   return blockArray;
 }
 
-// New function for updated sheet structure:
-// Col A: SL NO, Col B: Block, Col C: CLF Name, Col D: Name of Intervention, Col E: Brief info, Col F: Image Link
 function parseInterventionsNew(data) {
   if (!data || data.length < 2) return [];
 
   var interventions = [];
   var headerRow = data[0];
-
-  // Detect if this is the new format (has Block and CLF Name columns)
   var headerStr = headerRow.join(" ").toLowerCase();
   var isNewFormat = headerStr.indexOf("block") !== -1 && headerStr.indexOf("clf") !== -1;
 
@@ -152,24 +96,20 @@ function parseInterventionsNew(data) {
     var imageLink = "";
 
     if (isNewFormat) {
-      // New format: SL NO, Block, CLF Name, Name of Intervention, Brief info, Image Link
       block = row[1] ? row[1].toString().trim() : "";
       clfName = row[2] ? row[2].toString().trim() : "";
       interventionName = row[3] ? row[3].toString().trim() : "";
       brief = row[4] ? row[4].toString().trim() : "";
       imageLink = row[5] ? row[5].toString().trim() : "";
     } else {
-      // Old format: SL NO, Name of Intervention, Brief info, Image Link
       interventionName = row[1] ? row[1].toString().trim() : "";
       brief = row[2] ? row[2].toString().trim() : "";
       imageLink = row[3] ? row[3].toString().trim() : "";
     }
 
-    // Skip empty rows and summary rows
-    if (!interventionName && !brief) continue;
+    if (!block && !clfName && !interventionName) continue;
     if (block.toLowerCase() === "total" || clfName.toLowerCase() === "total") continue;
-    if (block.indexOf("BLOCK") !== -1 && block.match(/\d/)) continue;
-    if (clfName.indexOf("CLF") !== -1 && clfName.match(/\d/) && !interventionName) continue;
+    if (/\d+-block/i.test(block)) continue;
 
     interventions.push({
       block: block,
