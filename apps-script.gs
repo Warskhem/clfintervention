@@ -122,19 +122,42 @@ function parseBasicDetails(data) {
 // New function for updated sheet structure:
 // Col A: SL NO, Col B: Block, Col C: CLF Name, Col D: Name of Intervention, Col E: Brief info, Col F: Image Link
 function parseInterventionsNew(data) {
+  if (!data || data.length < 2) return [];
+
   var interventions = [];
+  var headerRow = data[0];
+
+  // Detect if this is the new format (has Block and CLF Name columns)
+  var headerStr = headerRow.join(" ").toLowerCase();
+  var isNewFormat = headerStr.indexOf("block") !== -1 && headerStr.indexOf("clf") !== -1;
 
   for (var i = 1; i < data.length; i++) {
     var row = data[i];
-    var block = row[1] ? row[1].toString().trim() : "";
-    var clfName = row[2] ? row[2].toString().trim() : "";
-    var interventionName = row[3] ? row[3].toString().trim() : "";
-    var brief = row[4] ? row[4].toString().trim() : "";
-    var imageLink = row[5] ? row[5].toString().trim() : "";
+    if (!row) continue;
+
+    var block = "";
+    var clfName = "";
+    var interventionName = "";
+    var brief = "";
+    var imageLink = "";
+
+    if (isNewFormat) {
+      // New format: SL NO, Block, CLF Name, Name of Intervention, Brief info, Image Link
+      block = row[1] ? row[1].toString().trim() : "";
+      clfName = row[2] ? row[2].toString().trim() : "";
+      interventionName = row[3] ? row[3].toString().trim() : "";
+      brief = row[4] ? row[4].toString().trim() : "";
+      imageLink = row[5] ? row[5].toString().trim() : "";
+    } else {
+      // Old format: SL NO, Name of Intervention, Brief info, Image Link
+      interventionName = row[1] ? row[1].toString().trim() : "";
+      brief = row[2] ? row[2].toString().trim() : "";
+      imageLink = row[3] ? row[3].toString().trim() : "";
+    }
 
     // Skip empty rows and summary rows
-    if (!clfName && !interventionName) continue;
-    if (clfName.toLowerCase() === "total" || block.toLowerCase() === "total") continue;
+    if (!interventionName && !brief) continue;
+    if (block.toLowerCase() === "total" || clfName.toLowerCase() === "total") continue;
     if (block.indexOf("BLOCK") !== -1 && block.match(/\d/)) continue;
     if (clfName.indexOf("CLF") !== -1 && clfName.match(/\d/) && !interventionName) continue;
 
