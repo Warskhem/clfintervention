@@ -13,24 +13,30 @@ function doGet(e) {
   }
 
   // Farm Intervention sheet
-  var farmSheet = sheet.getSheetByName("Farm Intervention");
+  var farmSheet = findSheet(sheet, ["Farm Intervention", "Farm Intervention "]);
   if (farmSheet) {
     var farmData = farmSheet.getDataRange().getValues();
     result.farmInterventions = parseInterventions(farmData);
+  } else {
+    result.farmInterventions = [];
   }
 
   // Non Farm Intervention sheet
-  var nonFarmSheet = sheet.getSheetByName("Non Farm Intervention");
+  var nonFarmSheet = findSheet(sheet, ["Non Farm Intervention", "Non Farm Intervention ", "Non Farm  Intervention"]);
   if (nonFarmSheet) {
     var nonFarmData = nonFarmSheet.getDataRange().getValues();
     result.nonFarmInterventions = parseInterventions(nonFarmData);
+  } else {
+    result.nonFarmInterventions = [];
   }
 
   // FI Intervention sheet
-  var fiSheet = sheet.getSheetByName("FI Intervention");
+  var fiSheet = findSheet(sheet, ["FI Intervention", "FI Intervention ", "FI  Intervention"]);
   if (fiSheet) {
     var fiData = fiSheet.getDataRange().getValues();
     result.fiInterventions = parseInterventions(fiData);
+  } else {
+    result.fiInterventions = [];
   }
 
   // Calculate summary
@@ -49,7 +55,7 @@ function doGet(e) {
     });
   });
 
-  // Get images from Farm Intervention sheet (column D has image links)
+  // Get images from all intervention sheets
   result.images = getImages(sheet);
 
   return ContentService
@@ -57,9 +63,29 @@ function doGet(e) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
+function findSheet(spreadsheet, names) {
+  var sheets = spreadsheet.getSheets();
+  for (var n = 0; n < names.length; n++) {
+    for (var i = 0; i < sheets.length; i++) {
+      if (sheets[i].getName().trim() === names[n].trim()) {
+        return sheets[i];
+      }
+    }
+  }
+  // Fallback: partial match
+  for (var i = 0; i < sheets.length; i++) {
+    var sName = sheets[i].getName().trim().toLowerCase();
+    for (var n = 0; n < names.length; n++) {
+      if (sName.indexOf(names[n].trim().toLowerCase()) !== -1) {
+        return sheets[i];
+      }
+    }
+  }
+  return null;
+}
+
 function parseBasicDetails(data) {
   var blocks = {};
-  var headers = data[0];
 
   for (var i = 1; i < data.length; i++) {
     var row = data[i];
@@ -68,7 +94,20 @@ function parseBasicDetails(data) {
     var vo = parseInt(row[4]) || 0;
     var shg = parseInt(row[5]) || 0;
 
-    if (!blockName || !clfName || blockName === "Total" || blockName.indexOf("AS PER") !== -1) {
+    if (!blockName || !clfName) continue;
+
+    var blockLower = blockName.toLowerCase();
+    var clfLower = clfName.toLowerCase();
+
+    // Filter out total/summary rows
+    if (blockLower === "total" ||
+        blockLower.indexOf("block") !== -1 && blockLower.match(/\d/) ||
+        blockLower.indexOf("as per") !== -1 ||
+        blockLower.indexOf("lokos") !== -1 ||
+        clfLower === "total" ||
+        clfLower.indexOf("-clf") !== -1 ||
+        clfLower.indexOf("-vo") !== -1 ||
+        clfLower.indexOf("-shg") !== -1) {
       continue;
     }
 
@@ -88,7 +127,9 @@ function parseBasicDetails(data) {
 
   var blockArray = [];
   for (var key in blocks) {
-    blockArray.push(blocks[key]);
+    if (blocks[key].clfs.length > 0) {
+      blockArray.push(blocks[key]);
+    }
   }
 
   return blockArray;
@@ -96,7 +137,6 @@ function parseBasicDetails(data) {
 
 function parseInterventions(data) {
   var interventions = [];
-  var headers = data[0];
 
   for (var i = 1; i < data.length; i++) {
     var row = data[i];
@@ -105,11 +145,17 @@ function parseInterventions(data) {
     var brief = row[2] ? row[2].toString().trim() : "";
     var imageLink = row[3] ? row[3].toString().trim() : "";
 
-    if (!slNo || !name || slNo === "Total") {
+    if (!name) continue;
+
+    // Skip total/header rows
+    var slLower = slNo.toLowerCase();
+    var nameLower = name.toLowerCase();
+    if (slLower === "total" || nameLower === "total" ||
+        nameLower === "name of intervention" || nameLower.indexOf("sl no") !== -1 ||
+        nameLower === "brief info on intervention programme") {
       continue;
     }
 
-    // Convert Google Drive links to direct image URLs
     var imageUrl = convertDriveLink(imageLink);
 
     interventions.push({
@@ -126,29 +172,32 @@ function parseInterventions(data) {
 function convertDriveLink(link) {
   if (!link) return "";
 
-  // Handle Google Drive share links
-  var driveRegex = /drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/;
-  var match = link.match(driveRegex);
+  link = link.toString().trim();
 
-  if (match) {
-    var fileId = match[1];
-    return "https://drive.google.com/uc?export=view&id=" + fileId;
-  }
+  // Handle Google Drive share links (multiple formats)
+  var patterns = [
+    /drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/,
+    /drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/,
+    /drive\.google\.com\/uc\?id=([a-zA-Z0-9_-]+)/,
+    /drive\.google\.com\/view\?id=([a-zA-Z0-9_-]+)/
+  ];
 
-  // Handle direct image URLs
-  if (link.match(/\.(jpg|jpeg|png|gif|webp)/i)) {
-    return link;
+  for (var i = 0; i < patterns.length; i++) {
+    var match = link.match(patterns[i]);
+    if (match) {
+      return "https://drive.google.com/uc?export=view&id=" + match[1];
+    }
   }
 
   return link;
 }
 
-function getImages(sheet) {
+function getImages(spreadsheet) {
   var images = {};
-  var sheets = ["Farm Intervention", "Non Farm Intervention", "FI Intervention"];
+  var sheetNames = ["Farm Intervention", "Non Farm Intervention", "FI Intervention"];
 
-  sheets.forEach(function(sheetName) {
-    var s = sheet.getSheetByName(sheetName);
+  sheetNames.forEach(function(sheetName) {
+    var s = findSheet(spreadsheet, [sheetName]);
     if (s) {
       var data = s.getDataRange().getValues();
       for (var i = 1; i < data.length; i++) {
@@ -165,7 +214,6 @@ function getImages(sheet) {
   return images;
 }
 
-// Test function - run this first to verify it works
 function testDoGet() {
   var result = doGet({});
   Logger.log(result.getContent());

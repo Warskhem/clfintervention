@@ -1,5 +1,4 @@
-// Google Apps Script Web App URL - Replace with your published URL
-// To get this URL: Deploy > New deployment > Web app > Copy URL
+// Google Apps Script Web App URL
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxAYXQR6A2ZX1yH7cHgP5jqPDxThrUL2PAu1WdI72ltxdjgQizqajvNYay3e4UQ758jAA/exec';
 
 // Static fallback data (used if live fetch fails)
@@ -33,11 +32,11 @@ const fallbackData = {
         { name: "IAINEHSKHEM CLF", vo: 11, shg: 82, interventions: { farm: { name: "", brief: "", image: "" }, nonFarm: { name: "", brief: "", image: "" }, fi: { name: "", brief: "", image: "" } } },
         { name: "KHATWEI CLF PYNDENGREI", vo: 13, shg: 135, interventions: { farm: { name: "", brief: "", image: "" }, nonFarm: { name: "", brief: "", image: "" }, fi: { name: "", brief: "", image: "" } } },
         { name: "KHAW KYLLA CLF MAWEIT", vo: 16, shg: 74, interventions: { farm: { name: "", brief: "", image: "" }, nonFarm: { name: "", brief: "", image: "" }, fi: { name: "", brief: "", image: "" } } },
-        { name: "KYNHUN SAINDUR CLF MAWIAWET-01", vo: 0, shg: 0, interventions: { farm: { name: "", brief: "", image: "" }, nonFarm: { name: "", brief: "", image: "" }, fi: { name: "", brief: "", image: "" } } },
+        { name: "KYNHUN SAINDUR CLF MAWIAWET", vo: 0, shg: 0, interventions: { farm: { name: "", brief: "", image: "" }, nonFarm: { name: "", brief: "", image: "" }, fi: { name: "", brief: "", image: "" } } },
         { name: "KYRSHAN IA KA LAWEI CLF", vo: 18, shg: 128, interventions: { farm: { name: "", brief: "", image: "" }, nonFarm: { name: "", brief: "", image: "" }, fi: { name: "", brief: "", image: "" } } },
         { name: "KYRSIEW CLF RISIANG", vo: 15, shg: 77, interventions: { farm: { name: "", brief: "", image: "" }, nonFarm: { name: "", brief: "", image: "" }, fi: { name: "", brief: "", image: "" } } },
         { name: "MAWJAMBASKHEM CLF", vo: 24, shg: 153, interventions: { farm: { name: "", brief: "", image: "" }, nonFarm: { name: "", brief: "", image: "" }, fi: { name: "", brief: "", image: "" } } },
-        { name: "SHAT JINSHAICLF LAITKSEH CLUSTER-0", vo: 0, shg: 0, interventions: { farm: { name: "", brief: "", image: "" }, nonFarm: { name: "", brief: "", image: "" }, fi: { name: "", brief: "", image: "" } } },
+        { name: "SHAT JINSHAICLF LAITKSEH CLUSTER", vo: 0, shg: 0, interventions: { farm: { name: "", brief: "", image: "" }, nonFarm: { name: "", brief: "", image: "" }, fi: { name: "", brief: "", image: "" } } },
         { name: "THWEIBIAR CLF NONGSTOIN", vo: 19, shg: 194, interventions: { farm: { name: "", brief: "", image: "" }, nonFarm: { name: "", brief: "", image: "" }, fi: { name: "", brief: "", image: "" } } },
         { name: "WANLAM JONGCHAI CLF WAHLYNGDOH", vo: 12, shg: 54, interventions: { farm: { name: "", brief: "", image: "" }, nonFarm: { name: "", brief: "", image: "" }, fi: { name: "", brief: "", image: "" } } }
       ]
@@ -70,10 +69,8 @@ const fallbackData = {
   ]
 };
 
-// Global variable to hold dashboard data
 let dashboardData = null;
 
-// Fetch live data from Google Apps Script
 async function fetchLiveData() {
   if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
     console.log('Using fallback data - Apps Script URL not configured');
@@ -81,17 +78,21 @@ async function fetchLiveData() {
   }
 
   try {
-    const response = await fetch(APPS_SCRIPT_URL);
-    if (!response.ok) throw new Error('Network response was not ok');
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const response = await fetch(APPS_SCRIPT_URL, { signal: controller.signal });
+    clearTimeout(timeoutId);
+
+    if (!response.ok) throw new Error('Network response was not ok: ' + response.status);
     const data = await response.json();
+    console.log('Live data loaded:', data);
     return processLiveData(data);
   } catch (error) {
-    console.warn('Failed to fetch live data, using fallback:', error);
+    console.warn('Failed to fetch live data, using fallback:', error.message);
     return fallbackData;
   }
 }
 
-// Process live data from Apps Script into dashboard format
 function processLiveData(data) {
   const result = {
     district: "West Khasi Hills District",
@@ -105,12 +106,12 @@ function processLiveData(data) {
         name: block.name,
         clfs: block.clfs.map(clf => ({
           name: clf.name,
-          vo: clf.vo,
-          shg: clf.shg,
+          vo: clf.vo || 0,
+          shg: clf.shg || 0,
           interventions: {
-            farm: findIntervention(data.farmInterventions, clf.name, data.images),
-            nonFarm: findIntervention(data.nonFarmInterventions, clf.name, data.images),
-            fi: findIntervention(data.fiInterventions, clf.name, data.images)
+            farm: matchIntervention(data.farmInterventions, block.name, data.images),
+            nonFarm: matchIntervention(data.nonFarmInterventions, block.name, data.images),
+            fi: matchIntervention(data.fiInterventions, block.name, data.images)
           }
         }))
       };
@@ -118,22 +119,25 @@ function processLiveData(data) {
     });
   }
 
+  console.log('Processed data:', result);
   return result;
 }
 
-// Find intervention data for a CLF
-function findIntervention(interventions, clfName, images) {
-  if (!interventions) {
+function matchIntervention(interventions, blockName, images) {
+  if (!interventions || interventions.length === 0) {
     return { name: "", brief: "", image: "" };
   }
 
-  // Try to find intervention matching the CLF name or block name
-  for (let i = 0; i < interventions.length; i++) {
-    const intervention = interventions[i];
-    if (intervention.brief && clfName.toLowerCase().includes(intervention.brief.toLowerCase())) {
+  var blockLower = blockName.toLowerCase().trim();
+
+  for (var i = 0; i < interventions.length; i++) {
+    var intervention = interventions[i];
+    var briefLower = (intervention.brief || "").toLowerCase().trim();
+
+    if (briefLower && blockLower.indexOf(briefLower) !== -1 || briefLower && briefLower.indexOf(blockLower) !== -1) {
       return {
-        name: intervention.name,
-        brief: intervention.brief,
+        name: intervention.name || "",
+        brief: intervention.brief || "",
         image: intervention.image || (images && images[intervention.name]) || ""
       };
     }
@@ -142,7 +146,6 @@ function findIntervention(interventions, clfName, images) {
   return { name: "", brief: "", image: "" };
 }
 
-// Initialize dashboard data
 async function initDashboard() {
   dashboardData = await fetchLiveData();
   return dashboardData;
