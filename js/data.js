@@ -1,15 +1,9 @@
 // Google Apps Script Web App URL
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxAYXQR6A2ZX1yH7cHgP5jqPDxThrUL2PAu1WdI72ltxdjgQizqajvNYay3e4UQ758jAA/exec';
 
-// Static fallback data (used if live fetch fails)
 const fallbackData = {
   district: "West Khasi Hills District",
-  summary: {
-    blocks: 5,
-    clfs: 30,
-    vos: 389,
-    shgs: 2371
-  },
+  summary: { blocks: 5, clfs: 30, vos: 389, shgs: 2371 },
   blocks: [
     {
       name: "Mawshynrut",
@@ -79,13 +73,13 @@ async function fetchLiveData() {
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
     const response = await fetch(APPS_SCRIPT_URL, { signal: controller.signal });
     clearTimeout(timeoutId);
 
-    if (!response.ok) throw new Error('Network response was not ok: ' + response.status);
+    if (!response.ok) throw new Error('HTTP ' + response.status);
     const data = await response.json();
-    console.log('Live data loaded:', data);
+    console.log('Raw live data from Apps Script:', data);
     return processLiveData(data);
   } catch (error) {
     console.warn('Failed to fetch live data, using fallback:', error.message);
@@ -109,9 +103,9 @@ function processLiveData(data) {
           vo: clf.vo || 0,
           shg: clf.shg || 0,
           interventions: {
-            farm: matchIntervention(data.farmInterventions, block.name, data.images),
-            nonFarm: matchIntervention(data.nonFarmInterventions, block.name, data.images),
-            fi: matchIntervention(data.fiInterventions, block.name, data.images)
+            farm: findInterventionForCLF(data.farmInterventions, block.name, clf.name),
+            nonFarm: findInterventionForCLF(data.nonFarmInterventions, block.name, clf.name),
+            fi: findInterventionForCLF(data.fiInterventions, block.name, clf.name)
           }
         }))
       };
@@ -119,27 +113,31 @@ function processLiveData(data) {
     });
   }
 
-  console.log('Processed data:', result);
+  console.log('Processed dashboard data:', result);
   return result;
 }
 
-function matchIntervention(interventions, blockName, images) {
+function findInterventionForCLF(interventions, blockName, clfName) {
   if (!interventions || interventions.length === 0) {
     return { name: "", brief: "", image: "" };
   }
 
   var blockLower = blockName.toLowerCase().trim();
+  var clfLower = clfName.toLowerCase().trim();
 
   for (var i = 0; i < interventions.length; i++) {
-    var intervention = interventions[i];
-    var briefLower = (intervention.brief || "").toLowerCase().trim();
+    var intv = interventions[i];
+    var intvBlock = (intv.block || "").toLowerCase().trim();
+    var intvCLF = (intv.clfName || "").toLowerCase().trim();
 
-    if (briefLower && blockLower.indexOf(briefLower) !== -1 || briefLower && briefLower.indexOf(blockLower) !== -1) {
-      return {
-        name: intervention.name || "",
-        brief: intervention.brief || "",
-        image: intervention.image || (images && images[intervention.name]) || ""
-      };
+    if (intvBlock === blockLower && intvCLF === clfLower) {
+      if (intv.name) {
+        return {
+          name: intv.name,
+          brief: intv.brief || "",
+          image: intv.image || ""
+        };
+      }
     }
   }
 

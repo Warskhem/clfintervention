@@ -10,31 +10,33 @@ function doGet(e) {
   if (basicSheet) {
     var basicData = basicSheet.getDataRange().getValues();
     result.blocks = parseBasicDetails(basicData);
+  } else {
+    result.blocks = [];
   }
 
-  // Farm Intervention sheet
-  var farmSheet = findSheet(sheet, ["Farm Intervention", "Farm Intervention "]);
+  // Farm Intervention sheet - columns: SL NO, Block, CLF Name, Name of Intervention, Brief info, Image Link
+  var farmSheet = findSheet(sheet, ["Farm Intervention"]);
   if (farmSheet) {
     var farmData = farmSheet.getDataRange().getValues();
-    result.farmInterventions = parseInterventions(farmData);
+    result.farmInterventions = parseInterventionsNew(farmData);
   } else {
     result.farmInterventions = [];
   }
 
   // Non Farm Intervention sheet
-  var nonFarmSheet = findSheet(sheet, ["Non Farm Intervention", "Non Farm Intervention ", "Non Farm  Intervention"]);
+  var nonFarmSheet = findSheet(sheet, ["Non Farm Intervention"]);
   if (nonFarmSheet) {
     var nonFarmData = nonFarmSheet.getDataRange().getValues();
-    result.nonFarmInterventions = parseInterventions(nonFarmData);
+    result.nonFarmInterventions = parseInterventionsNew(nonFarmData);
   } else {
     result.nonFarmInterventions = [];
   }
 
   // FI Intervention sheet
-  var fiSheet = findSheet(sheet, ["FI Intervention", "FI Intervention ", "FI  Intervention"]);
+  var fiSheet = findSheet(sheet, ["FI Intervention"]);
   if (fiSheet) {
     var fiData = fiSheet.getDataRange().getValues();
-    result.fiInterventions = parseInterventions(fiData);
+    result.fiInterventions = parseInterventionsNew(fiData);
   } else {
     result.fiInterventions = [];
   }
@@ -55,9 +57,6 @@ function doGet(e) {
     });
   });
 
-  // Get images from all intervention sheets
-  result.images = getImages(sheet);
-
   return ContentService
     .createTextOutput(JSON.stringify(result))
     .setMimeType(ContentService.MimeType.JSON);
@@ -67,16 +66,7 @@ function findSheet(spreadsheet, names) {
   var sheets = spreadsheet.getSheets();
   for (var n = 0; n < names.length; n++) {
     for (var i = 0; i < sheets.length; i++) {
-      if (sheets[i].getName().trim() === names[n].trim()) {
-        return sheets[i];
-      }
-    }
-  }
-  // Fallback: partial match
-  for (var i = 0; i < sheets.length; i++) {
-    var sName = sheets[i].getName().trim().toLowerCase();
-    for (var n = 0; n < names.length; n++) {
-      if (sName.indexOf(names[n].trim().toLowerCase()) !== -1) {
+      if (sheets[i].getName().trim().toLowerCase().indexOf(names[n].toLowerCase()) !== -1) {
         return sheets[i];
       }
     }
@@ -99,15 +89,9 @@ function parseBasicDetails(data) {
     var blockLower = blockName.toLowerCase();
     var clfLower = clfName.toLowerCase();
 
-    // Filter out total/summary rows
-    if (blockLower === "total" ||
+    if (blockLower === "total" || clfLower === "total" ||
         blockLower.indexOf("block") !== -1 && blockLower.match(/\d/) ||
-        blockLower.indexOf("as per") !== -1 ||
-        blockLower.indexOf("lokos") !== -1 ||
-        clfLower === "total" ||
-        clfLower.indexOf("-clf") !== -1 ||
-        clfLower.indexOf("-vo") !== -1 ||
-        clfLower.indexOf("-shg") !== -1) {
+        clfLower.indexOf("-clf") !== -1) {
       continue;
     }
 
@@ -135,34 +119,31 @@ function parseBasicDetails(data) {
   return blockArray;
 }
 
-function parseInterventions(data) {
+// New function for updated sheet structure:
+// Col A: SL NO, Col B: Block, Col C: CLF Name, Col D: Name of Intervention, Col E: Brief info, Col F: Image Link
+function parseInterventionsNew(data) {
   var interventions = [];
 
   for (var i = 1; i < data.length; i++) {
     var row = data[i];
-    var slNo = row[0] ? row[0].toString().trim() : "";
-    var name = row[1] ? row[1].toString().trim() : "";
-    var brief = row[2] ? row[2].toString().trim() : "";
-    var imageLink = row[3] ? row[3].toString().trim() : "";
+    var block = row[1] ? row[1].toString().trim() : "";
+    var clfName = row[2] ? row[2].toString().trim() : "";
+    var interventionName = row[3] ? row[3].toString().trim() : "";
+    var brief = row[4] ? row[4].toString().trim() : "";
+    var imageLink = row[5] ? row[5].toString().trim() : "";
 
-    if (!name) continue;
-
-    // Skip total/header rows
-    var slLower = slNo.toLowerCase();
-    var nameLower = name.toLowerCase();
-    if (slLower === "total" || nameLower === "total" ||
-        nameLower === "name of intervention" || nameLower.indexOf("sl no") !== -1 ||
-        nameLower === "brief info on intervention programme") {
-      continue;
-    }
-
-    var imageUrl = convertDriveLink(imageLink);
+    // Skip empty rows and summary rows
+    if (!clfName && !interventionName) continue;
+    if (clfName.toLowerCase() === "total" || block.toLowerCase() === "total") continue;
+    if (block.indexOf("BLOCK") !== -1 && block.match(/\d/)) continue;
+    if (clfName.indexOf("CLF") !== -1 && clfName.match(/\d/) && !interventionName) continue;
 
     interventions.push({
-      slNo: slNo,
-      name: name,
+      block: block,
+      clfName: clfName,
+      name: interventionName,
       brief: brief,
-      image: imageUrl
+      image: convertDriveLink(imageLink)
     });
   }
 
@@ -174,7 +155,6 @@ function convertDriveLink(link) {
 
   link = link.toString().trim();
 
-  // Handle Google Drive share links (multiple formats)
   var patterns = [
     /drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/,
     /drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/,
@@ -190,31 +170,4 @@ function convertDriveLink(link) {
   }
 
   return link;
-}
-
-function getImages(spreadsheet) {
-  var images = {};
-  var sheetNames = ["Farm Intervention", "Non Farm Intervention", "FI Intervention"];
-
-  sheetNames.forEach(function(sheetName) {
-    var s = findSheet(spreadsheet, [sheetName]);
-    if (s) {
-      var data = s.getDataRange().getValues();
-      for (var i = 1; i < data.length; i++) {
-        var name = data[i][1] ? data[i][1].toString().trim() : "";
-        var imageLink = data[i][3] ? data[i][3].toString().trim() : "";
-
-        if (name && imageLink) {
-          images[name] = convertDriveLink(imageLink);
-        }
-      }
-    }
-  });
-
-  return images;
-}
-
-function testDoGet() {
-  var result = doGet({});
-  Logger.log(result.getContent());
 }
