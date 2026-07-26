@@ -3,6 +3,12 @@ function doGet(e) {
   var allSheets = ss.getSheets();
   var result = {};
 
+  var debugInfo = [];
+  for (var d = 0; d < allSheets.length; d++) {
+    debugInfo.push(d + ":" + allSheets[d].getName() + "(rows:" + allSheets[d].getLastRow() + ")");
+  }
+  result.sheets = debugInfo.join(", ");
+
   var basicSheet = allSheets[0];
   if (basicSheet) {
     result.blocks = parseBasicDetails(basicSheet.getDataRange().getValues());
