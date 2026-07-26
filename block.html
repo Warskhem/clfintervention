@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Block Details - WKH Dashboard</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="header header-block">
+    <div class="header-content">
+      <div class="nav-bar">
+        <a href="index.html" class="back-btn">&larr; Back to Map</a>
+      </div>
+      <h1 class="block-name" id="blockName"></h1>
+      <p class="block-subtitle" id="blockSubtitle"></p>
+      <div class="block-summary" id="blockSummary"></div>
+    </div>
+  </header>
+
+  <main class="main">
+    <section class="clf-section">
+      <h2 class="section-title">CLF Details</h2>
+      <div class="clf-grid" id="clfGrid"></div>
+    </section>
+  </main>
+
+  <div class="modal" id="interventionModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modalTitle"></h3>
+        <button class="modal-close" id="modalClose">&times;</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <p>Data sourced from WKH District Intervention Spreadsheet</p>
+  </footer>
+
+  <script src="js/data.js"></script>
+  <script src="js/block.js"></script>
+</body>
+</html>
