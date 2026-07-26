@@ -80,7 +80,12 @@ async function fetchLiveData() {
     if (!response.ok) throw new Error('HTTP ' + response.status);
     const data = await response.json();
     console.log('Raw live data from Apps Script:', data);
-    return processLiveData(data);
+    const processed = processLiveData(data);
+    if (!processed.blocks || processed.blocks.length === 0) {
+      console.warn('Live data returned no blocks, using fallback');
+      return fallbackData;
+    }
+    return processed;
   } catch (error) {
     console.warn('Failed to fetch live data, using fallback:', error.message);
     return fallbackData;
