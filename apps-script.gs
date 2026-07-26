@@ -4,9 +4,17 @@
 function doGet(e) {
   var sheet = SpreadsheetApp.getActiveSpreadsheet();
   var result = {};
+  var allSheets = sheet.getSheets();
 
-  // Basic Details sheet (gid=0)
-  var basicSheet = sheet.getSheetByName("Basic Details");
+  // Log sheet names for debugging
+  var sheetNames = [];
+  for (var s = 0; s < allSheets.length; s++) {
+    sheetNames.push(s + ": " + allSheets[s].getName());
+  }
+  result.sheetNames = sheetNames;
+
+  // Basic Details sheet - try name match, fallback to index 0
+  var basicSheet = findSheet(sheet, ["Basic Details", "basic", "detail"]) || allSheets[0];
   if (basicSheet) {
     var basicData = basicSheet.getDataRange().getValues();
     result.blocks = parseBasicDetails(basicData);
@@ -14,8 +22,8 @@ function doGet(e) {
     result.blocks = [];
   }
 
-  // Farm Intervention sheet - columns: SL NO, Block, CLF Name, Name of Intervention, Brief info, Image Link
-  var farmSheet = findSheet(sheet, ["Farm Intervention"]);
+  // Farm Intervention sheet
+  var farmSheet = findSheet(sheet, ["Farm Intervention", "farm intervention", "farm"]) || allSheets[1];
   if (farmSheet) {
     var farmData = farmSheet.getDataRange().getValues();
     result.farmInterventions = parseInterventionsNew(farmData);
@@ -24,7 +32,7 @@ function doGet(e) {
   }
 
   // Non Farm Intervention sheet
-  var nonFarmSheet = findSheet(sheet, ["Non Farm Intervention"]);
+  var nonFarmSheet = findSheet(sheet, ["Non Farm Intervention", "nonfarm", "non farm", "non-farm"]) || allSheets[2];
   if (nonFarmSheet) {
     var nonFarmData = nonFarmSheet.getDataRange().getValues();
     result.nonFarmInterventions = parseInterventionsNew(nonFarmData);
@@ -33,7 +41,7 @@ function doGet(e) {
   }
 
   // FI Intervention sheet
-  var fiSheet = findSheet(sheet, ["FI Intervention"]);
+  var fiSheet = findSheet(sheet, ["FI Intervention", "fi intervention", "fi"]) || allSheets[3];
   if (fiSheet) {
     var fiData = fiSheet.getDataRange().getValues();
     result.fiInterventions = parseInterventionsNew(fiData);
@@ -65,8 +73,10 @@ function doGet(e) {
 function findSheet(spreadsheet, names) {
   var sheets = spreadsheet.getSheets();
   for (var n = 0; n < names.length; n++) {
+    var search = names[n].toLowerCase().trim();
     for (var i = 0; i < sheets.length; i++) {
-      if (sheets[i].getName().trim().toLowerCase().indexOf(names[n].toLowerCase()) !== -1) {
+      var sheetName = sheets[i].getName().toLowerCase().trim();
+      if (sheetName.indexOf(search) !== -1) {
         return sheets[i];
       }
     }
