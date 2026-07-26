@@ -1,6 +1,6 @@
 // Google Apps Script Web App URL - Replace with your published URL
 // To get this URL: Deploy > New deployment > Web app > Copy URL
-const APPS_SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxAYXQR6A2ZX1yH7cHgP5jqPDxThrUL2PAu1WdI72ltxdjgQizqajvNYay3e4UQ758jAA/exec';
 
 // Static fallback data (used if live fetch fails)
 const fallbackData = {
@@ -75,7 +75,7 @@ let dashboardData = null;
 
 // Fetch live data from Google Apps Script
 async function fetchLiveData() {
-  if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+  if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
     console.log('Using fallback data - Apps Script URL not configured');
     return fallbackData;
   }
