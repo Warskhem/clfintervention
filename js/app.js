@@ -34,11 +34,11 @@ function initSummary() {
 function renderLegend() {
   const legendItems = document.getElementById('legendItems');
   const blockColors = {
-    'Mawshynrut': '#4caf50',
-    'Nongstoin': '#66bb6a',
-    'Rambrai': '#81c784',
-    'RI-Muliang': '#a5d6a7',
-    'Shallang': '#c8e6c9'
+    'Mawshynrut': '#14532d',
+    'Nongstoin': '#166534',
+    'Rambrai': '#15803d',
+    'RI-Muliang': '#16a34a',
+    'Shallang': '#22c55e'
   };
 
   legendItems.innerHTML = dashboardData.blocks.map(block => `

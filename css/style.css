@@ -1,21 +1,23 @@
 :root {
-  --primary: #1a5632;
-  --primary-light: #2d8a4e;
-  --primary-dark: #0e3a1f;
-  --accent: #f59e0b;
-  --bg: #f8faf9;
-  --card-bg: #ffffff;
-  --text: #1f2937;
-  --text-light: #6b7280;
-  --border: #e5e7eb;
-  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --primary: #34d399;
+  --primary-light: #6ee7b7;
+  --primary-dark: #10b981;
+  --accent: #fbbf24;
+  --bg: #0b1220;
+  --bg-elevated: #0f1a2e;
+  --card-bg: #111b2e;
+  --text: #e2e8f0;
+  --text-light: #94a3b8;
+  --border: rgba(148, 163, 184, 0.16);
+  --border-strong: rgba(148, 163, 184, 0.28);
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.45), 0 2px 4px -2px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.55), 0 4px 6px -4px rgba(0, 0, 0, 0.55);
   --radius: 12px;
-  --heat-1: #d1fae5;
-  --heat-2: #a7f3d0;
-  --heat-3: #6ee7b7;
-  --heat-4: #34d399;
-  --heat-5: #10b981;
+  --heat-1: rgba(52, 211, 153, 0.12);
+  --heat-2: rgba(52, 211, 153, 0.3);
+  --heat-3: rgba(52, 211, 153, 0.45);
+  --heat-4: rgba(52, 211, 153, 0.6);
+  --heat-5: rgba(52, 211, 153, 0.8);
 }
 
 * {
@@ -26,17 +28,40 @@
 
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: var(--bg);
+  background: radial-gradient(ellipse at top, #101c33 0%, var(--bg) 55%);
+  background-attachment: fixed;
   color: var(--text);
   line-height: 1.6;
   min-height: 100vh;
 }
 
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1f2d44;
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2b3d5c;
+}
+
+::selection {
+  background: rgba(52, 211, 153, 0.3);
+}
+
 .header {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  background: linear-gradient(135deg, #0d1830 0%, #0b2b28 100%);
   color: white;
   padding: 2rem 1.5rem;
   text-align: center;
+  border-bottom: 1px solid rgba(52, 211, 153, 0.2);
 }
 
 .header-block {
@@ -139,9 +164,10 @@ body {
 #districtMap {
   width: 100%;
   height: auto;
-  background: white;
+  background: var(--card-bg);
   border-radius: var(--radius);
   box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border);
   display: block;
 }
 
@@ -165,7 +191,7 @@ body {
   font-weight: 600;
   fill: white;
   pointer-events: none;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
 }
 
 .block-clfs {
@@ -173,7 +199,7 @@ body {
   fill: white;
   pointer-events: none;
   opacity: 0.9;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
 }
 
 .district-label {
@@ -184,10 +210,11 @@ body {
 }
 
 .map-legend {
-  background: white;
+  background: var(--card-bg);
   padding: 1rem 1.5rem;
   border-radius: var(--radius);
   box-shadow: var(--shadow);
+  border: 1px solid var(--border);
   text-align: left;
 }
 
@@ -216,7 +243,7 @@ body {
   width: 20px;
   height: 20px;
   border-radius: 4px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.25);
 }
 
 /* CLF Grid */
@@ -256,7 +283,7 @@ body {
 .clf-name {
   font-size: 1.1rem;
   font-weight: 600;
-  color: var(--primary-dark);
+  color: var(--primary-light);
   flex: 1;
   line-height: 1.4;
 }
@@ -277,11 +304,11 @@ body {
 }
 
 .count-badge.vo {
-  background: #dbeafe;
+  background: rgba(59, 130, 246, 0.16);
 }
 
 .count-badge.shg {
-  background: #fef3c7;
+  background: rgba(245, 158, 11, 0.16);
 }
 
 .count-icon {
@@ -313,7 +340,7 @@ body {
   gap: 0.5rem;
   padding: 0.75rem 1.25rem;
   border: 2px solid var(--border);
-  background: white;
+  background: var(--card-bg);
   border-radius: 8px;
   cursor: pointer;
   font-size: 0.9rem;
@@ -327,30 +354,30 @@ body {
 }
 
 .intervention-btn.farm {
-  border-color: #86efac;
-  color: #166534;
+  border-color: #34d399;
+  color: #6ee7b7;
 }
 
 .intervention-btn.farm:hover {
-  background: #dcfce7;
+  background: rgba(52, 211, 153, 0.14);
 }
 
 .intervention-btn.nonfarm {
-  border-color: #fcd34d;
-  color: #92400e;
+  border-color: #fbbf24;
+  color: #fcd34d;
 }
 
 .intervention-btn.nonfarm:hover {
-  background: #fef9c3;
+  background: rgba(251, 191, 36, 0.14);
 }
 
 .intervention-btn.fi {
-  border-color: #93c5fd;
-  color: #1e40af;
+  border-color: #60a5fa;
+  color: #93c5fd;
 }
 
 .intervention-btn.fi:hover {
-  background: #dbeafe;
+  background: rgba(96, 165, 250, 0.14);
 }
 
 .btn-icon {
@@ -384,7 +411,7 @@ body {
 }
 
 .modal-content {
-  background: white;
+  background: var(--card-bg);
   border-radius: var(--radius);
   width: 90%;
   max-width: 600px;
@@ -393,6 +420,7 @@ body {
   transform: translateY(20px);
   transition: all 0.3s;
   box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border);
 }
 
 .modal.active .modal-content {
@@ -405,12 +433,12 @@ body {
   align-items: center;
   padding: 1.25rem 1.5rem;
   border-bottom: 1px solid var(--border);
-  background: var(--bg);
+  background: var(--bg-elevated);
 }
 
 .modal-title {
   font-size: 1.1rem;
-  color: var(--primary-dark);
+  color: var(--primary-light);
   flex: 1;
   padding-right: 1rem;
 }
@@ -431,7 +459,7 @@ body {
 }
 
 .modal-close:hover {
-  background: var(--border);
+  background: var(--border-strong);
   color: var(--text);
 }
 
@@ -487,6 +515,7 @@ body {
   justify-content: center;
   color: var(--text-light);
   gap: 0.5rem;
+  border: 1px solid var(--border);
 }
 
 .placeholder-icon {
@@ -724,8 +753,8 @@ body {
 /* Tooltip */
 .tooltip {
   position: fixed;
-  background: var(--primary-dark);
-  color: white;
+  background: var(--card-bg);
+  color: var(--text);
   padding: 0.75rem 1rem;
   border-radius: 8px;
   font-size: 0.85rem;
@@ -734,6 +763,7 @@ body {
   display: none;
   max-width: 300px;
   box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-strong);
 }
 
 .tooltip::after {
@@ -743,7 +773,7 @@ body {
   left: 50%;
   transform: translateX(-50%);
   border: 6px solid transparent;
-  border-top-color: var(--primary-dark);
+  border-top-color: var(--card-bg);
 }
 
 .tooltip-title {
