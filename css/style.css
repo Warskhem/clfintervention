@@ -290,6 +290,8 @@ body {
 
 .clf-counts {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 0.75rem;
   flex-shrink: 0;
 }
@@ -309,6 +311,29 @@ body {
 
 .count-badge.shg {
   background: rgba(245, 158, 11, 0.16);
+}
+
+.count-badge.vill {
+  background: rgba(16, 185, 129, 0.16);
+}
+
+.count-badge.actual {
+  background: rgba(168, 85, 247, 0.16);
+}
+
+.clf-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.25rem;
+  margin-bottom: 1rem;
+  font-size: 0.82rem;
+  color: var(--text-light);
+}
+
+.clf-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 .count-icon {

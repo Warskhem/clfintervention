@@ -21,12 +21,19 @@ document.addEventListener('DOMContentLoaded', async function() {
 
   const totalVo = block.clfs.reduce((sum, c) => sum + c.vo, 0);
   const totalShg = block.clfs.reduce((sum, c) => sum + c.shg, 0);
+  const totalVillages = block.clfs.reduce((sum, c) => sum + (c.villages || 0), 0);
+  const actualCount = block.clfs.filter(c => c.shgActual).length;
+  const totalActual = block.clfs.reduce((sum, c) => sum + (parseInt(c.shgActual, 10) || 0), 0);
 
   document.getElementById('blockSubtitle').textContent = `${block.clfs.length} Cluster Level Federations`;
   document.getElementById('blockSummary').innerHTML = `
     <div class="stat-item">
       <span class="stat-value">${block.clfs.length}</span>
       <span class="stat-label">CLFs</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-value">${totalVillages}</span>
+      <span class="stat-label">Villages</span>
     </div>
     <div class="stat-item">
       <span class="stat-value">${totalVo}</span>
@@ -36,6 +43,11 @@ document.addEventListener('DOMContentLoaded', async function() {
       <span class="stat-value">${totalShg}</span>
       <span class="stat-label">SHGs</span>
     </div>
+    ${actualCount ? `
+    <div class="stat-item">
+      <span class="stat-value">${totalActual}</span>
+      <span class="stat-label">SHG (Actual)</span>
+    </div>` : ''}
   `;
 
   renderCLFs(block);
@@ -45,11 +57,21 @@ document.addEventListener('DOMContentLoaded', async function() {
 function renderCLFs(block) {
   const grid = document.getElementById('clfGrid');
 
-  grid.innerHTML = block.clfs.map((clf, index) => `
+  grid.innerHTML = block.clfs.map((clf, index) => {
+    const metaParts = [];
+    if (clf.address) metaParts.push(`<span class="clf-meta-item">&#x1F4CD; ${clf.address}</span>`);
+    if (clf.landStatus) metaParts.push(`<span class="clf-meta-item">&#x1F3E0; ${clf.landStatus}</span>`);
+
+    return `
     <div class="clf-card" data-index="${index}">
       <div class="clf-header">
         <h3 class="clf-name">${clf.name}</h3>
         <div class="clf-counts">
+          <div class="count-badge vill">
+            <span class="count-icon">&#x1F3E1;</span>
+            <span class="count-value">${clf.villages || 0}</span>
+            <span class="count-label">Villages</span>
+          </div>
           <div class="count-badge vo">
             <span class="count-icon">&#x1F4CA;</span>
             <span class="count-value">${clf.vo}</span>
@@ -60,8 +82,15 @@ function renderCLFs(block) {
             <span class="count-value">${clf.shg}</span>
             <span class="count-label">SHGs</span>
           </div>
+          ${clf.shgActual ? `
+          <div class="count-badge actual">
+            <span class="count-icon">&#x2705;</span>
+            <span class="count-value">${clf.shgActual}</span>
+            <span class="count-label">SHG (Actual)</span>
+          </div>` : ''}
         </div>
       </div>
+      ${metaParts.length ? `<div class="clf-meta">${metaParts.join('')}</div>` : ''}
       <div class="intervention-buttons">
         <button class="intervention-btn farm" data-clf="${index}" data-type="farm">
           <span class="btn-icon">&#x1F33E;</span>
@@ -81,7 +110,8 @@ function renderCLFs(block) {
         </button>
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 
   grid.querySelectorAll('.intervention-btn').forEach(btn => {
     btn.addEventListener('click', function() {
