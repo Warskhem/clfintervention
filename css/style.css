@@ -317,10 +317,6 @@ body {
   background: rgba(16, 185, 129, 0.16);
 }
 
-.count-badge.actual {
-  background: rgba(168, 85, 247, 0.16);
-}
-
 .clf-meta {
   display: flex;
   flex-wrap: wrap;

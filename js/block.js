@@ -20,10 +20,8 @@ document.addEventListener('DOMContentLoaded', async function() {
   document.getElementById('blockName').textContent = block.name + ' Block';
 
   const totalVo = block.clfs.reduce((sum, c) => sum + c.vo, 0);
-  const totalShg = block.clfs.reduce((sum, c) => sum + c.shg, 0);
+  const totalShg = block.shgTotal != null ? block.shgTotal : block.clfs.reduce((sum, c) => sum + (c.shg || 0), 0);
   const totalVillages = block.clfs.reduce((sum, c) => sum + (c.villages || 0), 0);
-  const actualCount = block.clfs.filter(c => c.shgActual).length;
-  const totalActual = block.clfs.reduce((sum, c) => sum + (parseInt(c.shgActual, 10) || 0), 0);
 
   document.getElementById('blockSubtitle').textContent = `${block.clfs.length} Cluster Level Federations`;
   document.getElementById('blockSummary').innerHTML = `
@@ -41,13 +39,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     </div>
     <div class="stat-item">
       <span class="stat-value">${totalShg}</span>
-      <span class="stat-label">SHGs</span>
+      <span class="stat-label">Active SHGs</span>
     </div>
-    ${actualCount ? `
-    <div class="stat-item">
-      <span class="stat-value">${totalActual}</span>
-      <span class="stat-label">SHG (Actual)</span>
-    </div>` : ''}
   `;
 
   renderCLFs(block);
@@ -80,14 +73,8 @@ function renderCLFs(block) {
           <div class="count-badge shg">
             <span class="count-icon">&#x1F465;</span>
             <span class="count-value">${clf.shg}</span>
-            <span class="count-label">SHGs</span>
+            <span class="count-label">Active SHG</span>
           </div>
-          ${clf.shgActual ? `
-          <div class="count-badge actual">
-            <span class="count-icon">&#x2705;</span>
-            <span class="count-value">${clf.shgActual}</span>
-            <span class="count-label">SHG (Actual)</span>
-          </div>` : ''}
         </div>
       </div>
       ${metaParts.length ? `<div class="clf-meta">${metaParts.join('')}</div>` : ''}

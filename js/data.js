@@ -560,6 +560,57 @@ fallbackData.blocks.forEach(block => {
 
 let dashboardData = null;
 
+// Active SHG counts from the D02 SHG Details export (WKH, ML) per block and per CLF
+const activeShgByBlock = {
+  'Mawshynrut': 602,
+  'Nongstoin': 1496,
+  'Rambrai': 545,
+  'RI-Muliang': 348,
+  'Shallang': 303
+};
+
+const activeShgByCLF = {
+  'JINGKIENG BASKHEM CLF NONGJRI CIRCLE': 47,
+  'KURANGSAL CLF WOMEN MULTI PURPOSE COOPERATIVE SOCIETY': 58,
+  'MAWJAM CLF PORLA': 54,
+  'NONGTREI ASOR CLF': 46,
+  'NONGTREI IONG BI CLUSTER LEVEL FEDERATION UMSOHPIENG': 91,
+  'RYMPEI BAIAR CLUSTER LEVEL FEDERATION CLF': 154,
+  'SAINDUR IA KA LAWEI CLF MULTIPURPOSE COOPERATIVE SOCIETY LTD': 58,
+  '15 SHNONG CLUSTER LEVEL FEDERATION': 113,
+  'DAKA BANTEI CLF': 16,
+  'IAIKYRSOI CLF': 90,
+  'IAINEHSKHEM CLF': 82,
+  'KHATWEI CLF PYNDENGREI': 135,
+  'KHAW KYLLA CLF MAWEIT': 74,
+  'KYRSHAN IA KA LAWEI CLF': 129,
+  'KYRSIEW CLF RISIANG': 77,
+  'MAWJAMBASKHEM CLF': 153,
+  'THWEIBIAR CLF NONGSTOIN': 194,
+  'WANLAM JONGCHAI CLF WAHLYNGDOH': 54,
+  'IATREILANG CLF MAWTHIR': 46,
+  'KHADHYNNIEW SHNONG CLUSTER LEVEL FEDERATION': 96,
+  'SANDAKA CLF MAWDET': 71,
+  'TBEHJINGSHAI CLF MAWDOH': 60,
+  'WOMEN UNITED CLF RAMBRAI': 114,
+  'BIRONGDIK CLF': 73,
+  'IATYLLI BAN ROI CLF': 91,
+  'TENGKAME CLF': 69,
+  'TWAR BAN SAN CLF KYRDUM': 67,
+  'NIASON CLF UMDANG': 61
+};
+
+function applyActiveShg(data) {
+  if (!data || !data.blocks) return;
+  data.blocks.forEach(block => {
+    (block.clfs || []).forEach(clf => {
+      if (activeShgByCLF[clf.name] !== undefined) clf.shg = activeShgByCLF[clf.name];
+    });
+    if (activeShgByBlock[block.name] !== undefined) block.shgTotal = activeShgByBlock[block.name];
+  });
+  data.summary.shgs = data.blocks.reduce((sum, b) => sum + (b.shgTotal || 0), 0);
+}
+
 async function fetchLiveData() {
   // 1) Directly from the Google Spreadsheet (keeps the dashboard in sync with the sheet)
   try {
@@ -600,5 +651,6 @@ async function fetchLiveData() {
 
 async function initDashboard() {
   dashboardData = await fetchLiveData();
+  applyActiveShg(dashboardData);
   return dashboardData;
 }

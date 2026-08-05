@@ -26,7 +26,7 @@ function initSummary() {
     </div>
     <div class="stat-item">
       <span class="stat-value">${summary.shgs.toLocaleString()}</span>
-      <span class="stat-label">SHGs</span>
+      <span class="stat-label">Active SHGs</span>
     </div>
   `;
 }
@@ -98,10 +98,8 @@ function showBlockTooltip(element, block) {
   }
 
   const totalVo = block.clfs.reduce((sum, c) => sum + (c.vo || 0), 0);
-  const totalShg = block.clfs.reduce((sum, c) => sum + (c.shg || 0), 0);
+  const totalShg = block.shgTotal != null ? block.shgTotal : block.clfs.reduce((sum, c) => sum + (c.shg || 0), 0);
   const totalVillages = block.clfs.reduce((sum, c) => sum + (c.villages || 0), 0);
-  const actualCount = block.clfs.filter(c => c.shgActual).length;
-  const totalActual = block.clfs.reduce((sum, c) => sum + (parseInt(c.shgActual, 10) || 0), 0);
 
   tooltip.innerHTML = `
     <div class="tooltip-title">${escapeHtml(block.name)} Block</div>
@@ -109,8 +107,7 @@ function showBlockTooltip(element, block) {
       <span>${block.clfs.length} CLFs</span>
       <span>${totalVillages} Villages</span>
       <span>${totalVo} VOs</span>
-      <span>${totalShg} SHGs</span>
-      ${actualCount ? `<span>${totalActual} SHG (Act)</span>` : ''}
+      <span>${totalShg} Active SHGs</span>
     </div>
   `;
 
