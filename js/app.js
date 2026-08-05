@@ -79,6 +79,15 @@ function initMapInteractions() {
   });
 }
 
+function escapeHtml(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function showBlockTooltip(element, block) {
   let tooltip = document.getElementById('tooltip');
   if (!tooltip) {
@@ -88,16 +97,31 @@ function showBlockTooltip(element, block) {
     document.body.appendChild(tooltip);
   }
 
-  const totalVo = block.clfs.reduce((sum, c) => sum + c.vo, 0);
-  const totalShg = block.clfs.reduce((sum, c) => sum + c.shg, 0);
+  const totalVo = block.clfs.reduce((sum, c) => sum + (c.vo || 0), 0);
+  const totalShg = block.clfs.reduce((sum, c) => sum + (c.shg || 0), 0);
+  const totalVillages = block.clfs.reduce((sum, c) => sum + (c.villages || 0), 0);
+  const actualCount = block.clfs.filter(c => c.shgActual).length;
+  const totalActual = block.clfs.reduce((sum, c) => sum + (parseInt(c.shgActual, 10) || 0), 0);
+
+  const clfList = block.clfs.map(c => {
+    const metaParts = [];
+    if (c.villages) metaParts.push(`${c.villages} vill`);
+    if (c.shg) metaParts.push(`${c.shg} SHG`);
+    if (c.shgActual) metaParts.push(`Act ${c.shgActual}`);
+    const meta = metaParts.length ? `<span class="tip-clf-meta">${metaParts.join(' · ')}</span>` : '';
+    return `<div class="tip-clf"><span class="tip-clf-name">${escapeHtml(c.name)}</span>${meta}</div>`;
+  }).join('');
 
   tooltip.innerHTML = `
-    <div class="tooltip-title">${block.name}</div>
+    <div class="tooltip-title">${escapeHtml(block.name)} Block</div>
     <div class="tooltip-stats">
       <span>${block.clfs.length} CLFs</span>
+      <span>${totalVillages} Villages</span>
       <span>${totalVo} VOs</span>
       <span>${totalShg} SHGs</span>
+      ${actualCount ? `<span>${totalActual} SHG (Act)</span>` : ''}
     </div>
+    <div class="tooltip-clfs">${clfList}</div>
   `;
 
   tooltip.style.display = 'block';

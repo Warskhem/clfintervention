@@ -104,6 +104,10 @@ function parseBasicDetails(data) {
   var colCLF = findCol(header, ["clf name", "clf"]);
   var colVO = findCol(header, ["vo"]);
   var colSHG = findCol(header, ["shg"]);
+  var colVillages = findCol(header, ["villages", "village"]);
+  var colAddress = findCol(header, ["address", "adress", "addr"]);
+  var colLand = findCol(header, ["land"]);
+  var colActual = findCol(header, ["actual"]);
 
   var blocks = {};
   for (var i = headerIndex + 1; i < data.length; i++) {
@@ -112,11 +116,15 @@ function parseBasicDetails(data) {
     var clfName = (row[colCLF] || "").toString().trim();
     var vo = colVO !== -1 ? toInt(row[colVO]) : 0;
     var shg = colSHG !== -1 ? toInt(row[colSHG]) : 0;
+    var villages = colVillages !== -1 ? toInt(row[colVillages]) : 0;
+    var address = colAddress !== -1 ? (row[colAddress] || "").toString().trim() : "";
+    var landStatus = colLand !== -1 ? (row[colLand] || "").toString().trim() : "";
+    var shgActual = colActual !== -1 ? cleanActual(row[colActual]) : "";
     if (!blockName || !clfName) continue;
     if (isJunkName(blockName) || isJunkName(clfName)) continue;
 
     if (!blocks[blockName]) blocks[blockName] = { name: blockName, clfs: [] };
-    blocks[blockName].clfs.push({ name: clfName, vo: vo, shg: shg });
+    blocks[blockName].clfs.push({ name: clfName, vo: vo, shg: shg, villages: villages, address: address, landStatus: landStatus, shgActual: shgActual });
   }
 
   var arr = [];
@@ -124,6 +132,12 @@ function parseBasicDetails(data) {
     if (blocks[key].clfs.length > 0) arr.push(blocks[key]);
   }
   return arr;
+}
+
+function cleanActual(value) {
+  var v = (value || "").toString().trim();
+  if (!v || /no data/i.test(v)) return "";
+  return v;
 }
 
 function parseInterventions(data) {

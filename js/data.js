@@ -27,6 +27,12 @@ function toInt(value) {
   return isNaN(n) ? 0 : n;
 }
 
+function cleanActual(value) {
+  const v = clean(value);
+  if (!v || /no data/i.test(v)) return '';
+  return v;
+}
+
 function isJunkName(name) {
   const n = (name || '').toLowerCase();
   if (!n) return true;
@@ -168,6 +174,10 @@ function parseBasicDetails(rows) {
   const colCLF = findColumn(headers, ['clf name', 'clf']);
   const colVO = findColumn(headers, ['vo']);
   const colSHG = findColumn(headers, ['shg']);
+  const colVillages = findColumn(headers, ['villages', 'village']);
+  const colAddress = findColumn(headers, ['address', 'adress', 'addr']);
+  const colLand = findColumn(headers, ['land']);
+  const colActual = findColumn(headers, ['actual']);
 
   const blocksMap = {};
   for (let i = headerIndex + 1; i < rows.length; i++) {
@@ -182,9 +192,13 @@ function parseBasicDetails(rows) {
 
     const vo = toInt(colVO !== -1 ? row[colVO] : 0);
     const shg = toInt(colSHG !== -1 ? row[colSHG] : 0);
+    const villages = toInt(colVillages !== -1 ? row[colVillages] : 0);
+    const address = clean(colAddress !== -1 ? row[colAddress] : '');
+    const landStatus = clean(colLand !== -1 ? row[colLand] : '');
+    const shgActual = cleanActual(colActual !== -1 ? row[colActual] : '');
 
     if (!blocksMap[blockName]) blocksMap[blockName] = { name: blockName, clfs: [] };
-    blocksMap[blockName].clfs.push({ name: clfName, vo: vo, shg: shg });
+    blocksMap[blockName].clfs.push({ name: clfName, vo: vo, shg: shg, villages: villages, address: address, landStatus: landStatus, shgActual: shgActual });
   }
 
   return { blocks: Object.values(blocksMap) };
@@ -321,6 +335,10 @@ function buildDashboardData(blocks, interventions) {
         name: clf.name,
         vo: clf.vo || 0,
         shg: clf.shg || 0,
+        villages: clf.villages || 0,
+        address: clf.address || '',
+        landStatus: clf.landStatus || '',
+        shgActual: clf.shgActual || '',
         interventions: {
           farm: findInterventionForCLF(interventions.farm, block.name, clf.name),
           nonFarm: findInterventionForCLF(interventions.nonFarm, block.name, clf.name),
@@ -354,6 +372,10 @@ function processLiveData(data) {
           name: clf.name,
           vo: toInt(clf.vo),
           shg: toInt(clf.shg),
+          villages: toInt(clf.villages),
+          address: clean(clf.address),
+          landStatus: clean(clf.landStatus),
+          shgActual: cleanActual(clf.shgActual),
           interventions: {
             farm: findInterventionForCLF(data.farmInterventions, block.name, clf.name),
             nonFarm: findInterventionForCLF(data.nonFarmInterventions, block.name, clf.name),
@@ -487,12 +509,52 @@ const fallbackSisd = {
   'TENGKAME CLF': { transitHome: 'Transit Home at Aradonga PHC run by VO' }
 };
 
+// Basic details fallback per CLF from the sheet (villages, actual SHG; address/land empty in sheet)
+const fallbackBasic = {
+  'JINGKIENG BASKHEM CLF NONGJRI CIRCLE': { villages: 11, shgActual: '' },
+  'KURANGSAL CLF WOMEN MULTI PURPOSE COOPERATIVE SOCIETY': { villages: 17, shgActual: '67' },
+  'MAWJAM CLF PORLA': { villages: 13, shgActual: '' },
+  'NONGTREI ASOR CLF': { villages: 14, shgActual: '' },
+  'NONGTREI IONG BI CLUSTER LEVEL FEDERATION UMSOHPIENG': { villages: 21, shgActual: '' },
+  'RYMPEI BAIAR CLUSTER LEVEL FEDERATION CLF': { villages: 26, shgActual: '147' },
+  'SAINDUR IA KA LAWEI CLF MULTIPURPOSE COOPERATIVE SOCIETY LTD': { villages: 12, shgActual: '' },
+  '15 SHNONG CLUSTER LEVEL FEDERATION': { villages: 14, shgActual: '114' },
+  'DAKA BANTEI CLF': { villages: 68, shgActual: '' },
+  'IAIKYRSOI CLF': { villages: 14, shgActual: '94' },
+  'IAINEHSKHEM CLF': { villages: 12, shgActual: '86' },
+  'KHATWEI CLF PYNDENGREI': { villages: 5, shgActual: '130' },
+  'KHAW KYLLA CLF MAWEIT': { villages: 16, shgActual: '84' },
+  'KYNHUN SAINDUR CLF MAWIAWET': { villages: 1, shgActual: '' },
+  'KYRSHAN IA KA LAWEI CLF': { villages: 16, shgActual: '131' },
+  'KYRSIEW CLF RISIANG': { villages: 15, shgActual: '77' },
+  'MAWJAMBASKHEM CLF': { villages: 23, shgActual: '160' },
+  'SHAT JINSHAICLF LAITKSEH CLUSTER': { villages: 3, shgActual: '' },
+  'THWEIBIAR CLF NONGSTOIN': { villages: 9, shgActual: '212' },
+  'WANLAM JONGCHAI CLF WAHLYNGDOH': { villages: 14, shgActual: '59' },
+  'IATREILANG CLF MAWTHIR': { villages: 12, shgActual: '50' },
+  'KHADHYNNIEW SHNONG CLUSTER LEVEL FEDERATION': { villages: 12, shgActual: '137' },
+  'SANDAKA CLF MAWDET': { villages: 16, shgActual: '71' },
+  'TBEHJINGSHAI CLF MAWDOH': { villages: 13, shgActual: '79' },
+  'WOMEN UNITED CLF RAMBRAI': { villages: 13, shgActual: '120' },
+  'BIRONGDIK CLF': { villages: 17, shgActual: '97' },
+  'IATYLLI BAN ROI CLF': { villages: 20, shgActual: '92' },
+  'TENGKAME CLF': { villages: 12, shgActual: '95' },
+  'TWAR BAN SAN CLF KYRDUM': { villages: 10, shgActual: '81' },
+  'NIASON CLF UMDANG': { villages: 11, shgActual: '' }
+};
+
 fallbackData.blocks.forEach(block => {
   block.clfs.forEach(clf => {
     const s = fallbackSisd[clf.name];
     clf.interventions.sisd = s
       ? sis(s.childCare, s.transitHome, s.followUp, s.vrf)
       : sis('', '', '', '');
+
+    const b = fallbackBasic[clf.name] || {};
+    clf.villages = b.villages || 0;
+    clf.address = b.address || '';
+    clf.landStatus = b.landStatus || '';
+    clf.shgActual = b.shgActual || '';
   });
 });
 

@@ -805,7 +805,7 @@ body {
   pointer-events: none;
   z-index: 1000;
   display: none;
-  max-width: 300px;
+  max-width: 380px;
   box-shadow: var(--shadow-lg);
   border: 1px solid var(--border-strong);
 }
@@ -827,9 +827,41 @@ body {
 
 .tooltip-stats {
   display: flex;
-  gap: 1rem;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
   font-size: 0.8rem;
   opacity: 0.9;
+}
+
+.tooltip-clfs {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.tip-clf {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.25rem 0;
+  font-size: 0.78rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.tip-clf:last-child {
+  border-bottom: none;
+}
+
+.tip-clf-name {
+  font-weight: 600;
+}
+
+.tip-clf-meta {
+  color: var(--text-light);
+  white-space: nowrap;
 }
 
 /* Responsive - Large Screens */
