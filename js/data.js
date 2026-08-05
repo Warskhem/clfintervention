@@ -566,7 +566,7 @@ const activeShgByBlock = {
   'Nongstoin': 1496,
   'Rambrai': 545,
   'RI-Muliang': 348,
-  'Shallang': 303
+  'Shallang': 60
 };
 
 const activeShgByCLF = {
@@ -597,7 +597,7 @@ const activeShgByCLF = {
   'IATYLLI BAN ROI CLF': 91,
   'TENGKAME CLF': 69,
   'TWAR BAN SAN CLF KYRDUM': 67,
-  'NIASON CLF UMDANG': 61
+  'NIASON CLF UMDANG': 60
 };
 
 function applyActiveShg(data) {
