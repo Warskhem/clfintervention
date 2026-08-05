@@ -119,9 +119,9 @@ function showInterventionModal(clf, type) {
 
   title.textContent = `${clf.name} - ${typeLabels[type]}`;
 
-  const intervention = clf.interventions[type];
+  const intervention = clf.interventions[type] || { name: '', brief: '', image: '' };
 
-  if (!intervention.name && !intervention.brief) {
+  if (!intervention.name && !intervention.brief && !intervention.image) {
     body.innerHTML = `
       <div class="intervention-detail">
         <div class="intervention-placeholder">
@@ -132,35 +132,87 @@ function showInterventionModal(clf, type) {
       </div>
     `;
   } else {
-    const imageHtml = intervention.image
-      ? `<img src="${intervention.image}" alt="${intervention.name}" class="intervention-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-         <div class="intervention-placeholder" style="display:none;">
-           <span class="placeholder-icon">&#x1F5BC;</span>
-           <p>Image could not be loaded</p>
+    const nameRow = intervention.name
+      ? `<div class="detail-row">
+           <span class="detail-label">Intervention Name:</span>
+           <span class="detail-value">${escapeHtml(intervention.name)}</span>
          </div>`
-      : `<div class="intervention-placeholder">
-           <span class="placeholder-icon">&#x1F5BC;</span>
-           <p>No image available</p>
-         </div>`;
+      : '';
+
+    const briefRow = intervention.brief
+      ? `<div class="detail-row">
+           <span class="detail-label">Brief on Programme:</span>
+           <span class="detail-value">${escapeHtml(intervention.brief)}</span>
+         </div>`
+      : '';
 
     body.innerHTML = `
       <div class="intervention-detail">
-        <div class="detail-row">
-          <span class="detail-label">Intervention Name:</span>
-          <span class="detail-value">${intervention.name}</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Brief on Programme:</span>
-          <span class="detail-value">${intervention.brief}</span>
-        </div>
+        ${nameRow}
+        ${briefRow}
         <div class="detail-image">
-          ${imageHtml}
+          ${buildInterventionImage(intervention.image, intervention.name)}
         </div>
       </div>
     `;
   }
 
   modal.classList.add('active');
+}
+
+function escapeHtml(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function getDriveFolderId(url) {
+  const m = (url || '').match(/drive\.google\.com\/(?:drive\/)?(?:u\/\d+\/)?folders\/([a-zA-Z0-9_-]+)/);
+  return m ? m[1] : '';
+}
+
+function getDriveFileId(url) {
+  let m = (url || '').match(/drive\.google\.com\/uc\?export=view&id=([a-zA-Z0-9_-]+)/);
+  if (m) return m[1];
+  m = (url || '').match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+  return m ? m[1] : '';
+}
+
+function buildInterventionImage(image, name) {
+  const imageText = escapeHtml(image || '');
+  const altText = escapeHtml(name || 'Intervention');
+
+  if (!imageText) {
+    return `<div class="intervention-placeholder">
+             <span class="placeholder-icon">&#x1F5BC;</span>
+             <p>No image available</p>
+           </div>`;
+  }
+
+  const folderId = getDriveFolderId(imageText);
+  if (folderId) {
+    return `<div class="folder-embed-wrapper">
+             <iframe src="https://drive.google.com/embeddedfolderview?id=${encodeURIComponent(folderId)}#grid"
+                     width="100%" height="320" frameborder="0" scrolling="yes"
+                     title="${altText}" class="folder-embed"></iframe>
+             <a href="${imageText}" target="_blank" rel="noopener noreferrer" class="folder-link">
+               &#x1F4C1; Open photo folder in Google Drive
+             </a>
+           </div>`;
+  }
+
+  const fileId = getDriveFileId(imageText);
+  const src = fileId ? 'https://drive.google.com/uc?export=view&id=' + encodeURIComponent(fileId) : imageText;
+
+  return `<img src="${src}" alt="${altText}" class="intervention-image" referrerpolicy="no-referrer"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+          <div class="intervention-placeholder" style="display:none;">
+            <span class="placeholder-icon">&#x1F5BC;</span>
+            <p>Image could not be loaded</p>
+          </div>`;
 }
 
 function closeModal() {

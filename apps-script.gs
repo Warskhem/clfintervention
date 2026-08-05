@@ -1,5 +1,7 @@
+var SPREADSHEET_ID = '140SeRjUIztuJG6F6SDRAkz3z5vlbA07kH0UZG17M1Wo';
+
 function doGet(e) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   var allSheets = ss.getSheets();
   var result = {
     blocks: [],
@@ -16,7 +18,9 @@ function doGet(e) {
 
     var firstCell = data[0][0] ? data[0][0].toString().toLowerCase() : "";
 
-    if (firstCell.indexOf("district") !== -1) {
+    if (firstCell.indexOf("district") !== -1 ||
+        firstCell.indexOf("distirct") !== -1 ||
+        firstCell.indexOf("basic") !== -1) {
       result.blocks = parseBasicDetails(data);
     } else if (firstCell.indexOf("farm") !== -1 && firstCell.indexOf("non") === -1) {
       result.farmInterventions = parseInterventions(data);
@@ -26,6 +30,12 @@ function doGet(e) {
       result.fiInterventions = parseInterventions(data);
     }
   }
+
+  // Build a set of valid Block::CLF pairs so junk/total rows are filtered out
+  var validPairs = buildValidPairs(result.blocks);
+  result.farmInterventions = filterInterventions(result.farmInterventions, validPairs);
+  result.nonFarmInterventions = filterInterventions(result.nonFarmInterventions, validPairs);
+  result.fiInterventions = filterInterventions(result.fiInterventions, validPairs);
 
   for (var b = 0; b < result.blocks.length; b++) {
     result.summary.clfs += result.blocks[b].clfs.length;
@@ -39,6 +49,29 @@ function doGet(e) {
   return ContentService
     .createTextOutput(JSON.stringify(result))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+function buildValidPairs(blocks) {
+  var pairs = {};
+  for (var b = 0; b < blocks.length; b++) {
+    var block = blocks[b];
+    for (var c = 0; c < block.clfs.length; c++) {
+      pairs[(block.name || "").toLowerCase() + "::" + (block.clfs[c].name || "").toLowerCase()] = true;
+    }
+  }
+  return pairs;
+}
+
+function filterInterventions(interventions, validPairs) {
+  if (!interventions) return [];
+  var out = [];
+  for (var i = 0; i < interventions.length; i++) {
+    var intv = interventions[i];
+    if (!intv) continue;
+    var key = (intv.block || "").toLowerCase() + "::" + (intv.clfName || "").toLowerCase();
+    if (validPairs[key]) out.push(intv);
+  }
+  return out;
 }
 
 function findCol(header, keywords) {
@@ -65,10 +98,10 @@ function parseBasicDetails(data) {
     var row = data[i];
     var blockName = (row[colBlock] || "").toString().trim();
     var clfName = (row[colCLF] || "").toString().trim();
-    var vo = colVO !== -1 ? (parseInt(row[colVO]) || 0) : 0;
-    var shg = colSHG !== -1 ? (parseInt(row[colSHG]) || 0) : 0;
+    var vo = colVO !== -1 ? toInt(row[colVO]) : 0;
+    var shg = colSHG !== -1 ? toInt(row[colSHG]) : 0;
     if (!blockName || !clfName) continue;
-    if (/\d+-block/i.test(blockName) || /\d+-clf/i.test(clfName)) continue;
+    if (isJunkName(blockName) || isJunkName(clfName)) continue;
 
     if (!blocks[blockName]) blocks[blockName] = { name: blockName, clfs: [] };
     blocks[blockName].clfs.push({ name: clfName, vo: vo, shg: shg });
@@ -110,8 +143,9 @@ function parseInterventions(data) {
       image = colImage !== -1 ? (row[colImage] || "").toString().trim() : "";
     }
 
-    if (!intervention && !brief && !block && !clfName) continue;
-    if (/\d+-block/i.test(block) || /\d+-clf/i.test(clfName)) continue;
+    if (!clfName || isJunkName(clfName)) continue;
+    if (!block) continue;
+    if (!intervention && !brief && !image) continue;
 
     results.push({
       block: block,
@@ -124,12 +158,30 @@ function parseInterventions(data) {
   return results;
 }
 
+function isJunkName(name) {
+  var n = (name || "").toLowerCase();
+  if (!n) return true;
+  if (/\d+-block/i.test(n) || /\d+-clf/i.test(n)) return true;
+  if (/(^|\s)total(\s|$)/i.test(n)) return true;
+  if (/no data/i.test(n)) return true;
+  if (/no clf/i.test(n)) return true;
+  return false;
+}
+
+function toInt(value) {
+  var n = parseInt(String(value || "").replace(/[^0-9-]/g, ""), 10);
+  return isNaN(n) ? 0 : n;
+}
+
 function convertDriveLink(link) {
   if (!link) return "";
   link = link.toString().trim();
   var match = link.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
   if (match) return "https://drive.google.com/uc?export=view&id=" + match[1];
+  match = link.match(/drive\.google\.com\/(?:drive\/)?(?:u\/\d+\/)?folders\/([a-zA-Z0-9_-]+)/);
+  if (match) return link;
   match = link.match(/[?&]id=([a-zA-Z0-9_-]+)/);
   if (match) return "https://drive.google.com/uc?export=view&id=" + match[1];
-  return link;
+  if (/^https?:\/\//i.test(link)) return link;
+  return "";
 }
