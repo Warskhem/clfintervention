@@ -75,6 +75,10 @@ function renderCLFs(block) {
           <span class="btn-icon">&#x1F4CA;</span>
           <span class="btn-text">FI</span>
         </button>
+        <button class="intervention-btn sisd" data-clf="${index}" data-type="sisd">
+          <span class="btn-icon">&#x1F3E5;</span>
+          <span class="btn-text">SISD</span>
+        </button>
       </div>
     </div>
   `).join('');
@@ -114,14 +118,17 @@ function showInterventionModal(clf, type) {
   const typeLabels = {
     farm: 'Farm Intervention',
     nonFarm: 'Non-Farm Intervention',
-    fi: 'FI Intervention'
+    fi: 'FI Intervention',
+    sisd: 'SISD Intervention'
   };
 
   title.textContent = `${clf.name} - ${typeLabels[type]}`;
 
   const intervention = clf.interventions[type] || { name: '', brief: '', image: '' };
 
-  if (!intervention.name && !intervention.brief && !intervention.image) {
+  if (type === 'sisd') {
+    body.innerHTML = renderSisdBody(intervention);
+  } else if (!intervention.name && !intervention.brief && !intervention.image) {
     body.innerHTML = `
       <div class="intervention-detail">
         <div class="intervention-placeholder">
@@ -167,6 +174,32 @@ function escapeHtml(value) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+function renderSisdBody(sisd) {
+  const rows = [];
+  if (sisd.childCare) rows.push(['Child Care Support (children)', sisd.childCare]);
+  if (sisd.transitHome) rows.push(['Transit Home', sisd.transitHome]);
+  if (sisd.followUp) rows.push(['Follow up of High Risk & Pregnant Mothers', sisd.followUp]);
+  if (sisd.vrf) rows.push(['Provided with VRF to SAM/MAM', sisd.vrf]);
+
+  if (rows.length === 0) {
+    return `<div class="intervention-detail">
+      <div class="intervention-placeholder">
+        <span class="placeholder-icon">&#x1F4CB;</span>
+        <p>SISD data pending</p>
+        <p class="placeholder-hint">Add data to the Google Sheet to populate this section</p>
+      </div>
+    </div>`;
+  }
+
+  return `<div class="intervention-detail">
+    ${rows.map(pair => `
+      <div class="detail-row">
+        <span class="detail-label">${escapeHtml(pair[0])}:</span>
+        <span class="detail-value">${escapeHtml(pair[1])}</span>
+      </div>`).join('')}
+  </div>`;
 }
 
 function getDriveFolderId(url) {

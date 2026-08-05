@@ -8,6 +8,7 @@ const SHEET_GIDS = {
   basic: '0',          // BasicDetails
   farm: '1503017610',  // FarmIntervention
   nonFarm: '1675078846', // NonFarmIntervention
+  sisd: '681513967',   // SISD Intervention
   fi: '1143138919'     // FIIntervention
 };
 
@@ -133,6 +134,10 @@ function iv(name, brief, image) {
   return { name: clean(name), brief: clean(brief), image: normalizeImageUrl(image) };
 }
 
+function sis(childCare, transitHome, followUp, vrf) {
+  return { childCare: clean(childCare), transitHome: clean(transitHome), followUp: clean(followUp), vrf: clean(vrf) };
+}
+
 // ---------------------------------------------------------------------------
 // Google Spreadsheet parsing
 // ---------------------------------------------------------------------------
@@ -221,11 +226,70 @@ function parseInterventionRows(rows, validPairs) {
   return results;
 }
 
+function parseSisdRows(rows, validPairs) {
+  if (!rows || rows.length < 2) return [];
+
+  const headerIndex = findHeaderRow(rows, ['block'], ['clf name', 'clf']);
+  if (headerIndex === -1) return [];
+
+  const headers = rows[headerIndex];
+  const colBlock = findColumn(headers, ['block']);
+  const colCLF = findColumn(headers, ['clf name', 'clf']);
+  const colChild = findColumn(headers, ['child care']);
+  const colTransit = findColumn(headers, ['transit home']);
+  const colFollowUp = findColumn(headers, ['follow up', 'pregnant']);
+  const colVRF = findColumn(headers, ['vrf', 'sam/mam']);
+
+  const results = [];
+  for (let i = headerIndex + 1; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row) continue;
+
+    const block = clean(row[colBlock]);
+    const clfName = clean(row[colCLF]);
+
+    if (!block || !clfName || isJunkName(clfName)) continue;
+    if (validPairs && !validPairs.has(block.toLowerCase() + '::' + clfName.toLowerCase())) continue;
+
+    const childCare = colChild !== -1 ? clean(row[colChild]) : '';
+    const transitHome = colTransit !== -1 ? clean(row[colTransit]) : '';
+    const followUp = colFollowUp !== -1 ? clean(row[colFollowUp]) : '';
+    const vrf = colVRF !== -1 ? clean(row[colVRF]) : '';
+
+    if (!childCare && !transitHome && !followUp && !vrf) continue;
+
+    results.push({ block: block, clfName: clfName, childCare: childCare, transitHome: transitHome, followUp: followUp, vrf: vrf });
+  }
+  return results;
+}
+
+function findSisdForCLF(sisdRows, blockName, clfName) {
+  const empty = { childCare: '', transitHome: '', followUp: '', vrf: '' };
+  if (!sisdRows || sisdRows.length === 0) return empty;
+
+  const blockLower = (blockName || '').toLowerCase().trim();
+  const clfLower = (clfName || '').toLowerCase().trim();
+
+  for (let i = 0; i < sisdRows.length; i++) {
+    const r = sisdRows[i] || {};
+    if ((r.block || '').toLowerCase().trim() === blockLower && (r.clfName || '').toLowerCase().trim() === clfLower) {
+      return {
+        childCare: clean(r.childCare),
+        transitHome: clean(r.transitHome),
+        followUp: clean(r.followUp),
+        vrf: clean(r.vrf)
+      };
+    }
+  }
+  return empty;
+}
+
 async function buildFromSpreadsheet() {
-  const [basicCsv, farmCsv, nonFarmCsv, fiCsv] = await Promise.all([
+  const [basicCsv, farmCsv, nonFarmCsv, sisdCsv, fiCsv] = await Promise.all([
     fetchSheetCsv(SHEET_GIDS.basic),
     fetchSheetCsv(SHEET_GIDS.farm),
     fetchSheetCsv(SHEET_GIDS.nonFarm),
+    fetchSheetCsv(SHEET_GIDS.sisd),
     fetchSheetCsv(SHEET_GIDS.fi)
   ]);
 
@@ -237,9 +301,10 @@ async function buildFromSpreadsheet() {
   const validPairs = buildValidPairs(basic.blocks);
   const farm = parseInterventionRows(parseCSV(farmCsv), validPairs);
   const nonFarm = parseInterventionRows(parseCSV(nonFarmCsv), validPairs);
+  const sisd = parseSisdRows(parseCSV(sisdCsv), validPairs);
   const fi = parseInterventionRows(parseCSV(fiCsv), validPairs);
 
-  return buildDashboardData(basic.blocks, { farm: farm, nonFarm: nonFarm, fi: fi });
+  return buildDashboardData(basic.blocks, { farm: farm, nonFarm: nonFarm, sisd: sisd, fi: fi });
 }
 
 function buildDashboardData(blocks, interventions) {
@@ -259,7 +324,8 @@ function buildDashboardData(blocks, interventions) {
         interventions: {
           farm: findInterventionForCLF(interventions.farm, block.name, clf.name),
           nonFarm: findInterventionForCLF(interventions.nonFarm, block.name, clf.name),
-          fi: findInterventionForCLF(interventions.fi, block.name, clf.name)
+          fi: findInterventionForCLF(interventions.fi, block.name, clf.name),
+          sisd: findSisdForCLF(interventions.sisd, block.name, clf.name)
         }
       };
     });
@@ -291,7 +357,8 @@ function processLiveData(data) {
           interventions: {
             farm: findInterventionForCLF(data.farmInterventions, block.name, clf.name),
             nonFarm: findInterventionForCLF(data.nonFarmInterventions, block.name, clf.name),
-            fi: findInterventionForCLF(data.fiInterventions, block.name, clf.name)
+            fi: findInterventionForCLF(data.fiInterventions, block.name, clf.name),
+            sisd: findSisdForCLF(data.sisdInterventions, block.name, clf.name)
           }
         }))
       };
@@ -300,7 +367,7 @@ function processLiveData(data) {
   }
 
   result.summary = buildDashboardData(result.blocks, {
-    farm: [], nonFarm: [], fi: []
+    farm: [], nonFarm: [], fi: [], sisd: []
   }).summary;
 
   return result;
@@ -402,6 +469,32 @@ const fallbackData = {
 // ---------------------------------------------------------------------------
 // Orchestration
 // ---------------------------------------------------------------------------
+
+// SISD fallback data (child care support, transit homes) per CLF from the sheet
+const fallbackSisd = {
+  'JINGKIENG BASKHEM CLF NONGJRI CIRCLE': { childCare: '8' },
+  'KURANGSAL CLF WOMEN MULTI PURPOSE COOPERATIVE SOCIETY': { childCare: '6' },
+  'MAWJAM CLF PORLA': { childCare: '5' },
+  'NONGTREI ASOR CLF': { childCare: '6' },
+  'NONGTREI IONG BI CLUSTER LEVEL FEDERATION UMSOHPIENG': { childCare: '6' },
+  'RYMPEI BAIAR CLUSTER LEVEL FEDERATION CLF': { childCare: '4' },
+  'SAINDUR IA KA LAWEI CLF MULTIPURPOSE COOPERATIVE SOCIETY LTD': { childCare: '3' },
+  '15 SHNONG CLUSTER LEVEL FEDERATION': { childCare: '2' },
+  'DAKA BANTEI CLF': { childCare: '5' },
+  'KHAW KYLLA CLF MAWEIT': { transitHome: 'Transit Home at Maweit PHC run by VO' },
+  'MAWJAMBASKHEM CLF': { transitHome: 'Transit Home at Mawkadiang run by VO' },
+  'KHADHYNNIEW SHNONG CLUSTER LEVEL FEDERATION': { transitHome: 'Transit Home at Rambrai PHC run by VO' },
+  'TENGKAME CLF': { transitHome: 'Transit Home at Aradonga PHC run by VO' }
+};
+
+fallbackData.blocks.forEach(block => {
+  block.clfs.forEach(clf => {
+    const s = fallbackSisd[clf.name];
+    clf.interventions.sisd = s
+      ? sis(s.childCare, s.transitHome, s.followUp, s.vrf)
+      : sis('', '', '', '');
+  });
+});
 
 let dashboardData = null;
 

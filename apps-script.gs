@@ -7,6 +7,7 @@ function doGet(e) {
     blocks: [],
     farmInterventions: [],
     nonFarmInterventions: [],
+    sisdInterventions: [],
     fiInterventions: [],
     summary: { blocks: 0, clfs: 0, vos: 0, shgs: 0 }
   };
@@ -26,6 +27,8 @@ function doGet(e) {
       result.farmInterventions = parseInterventions(data);
     } else if (firstCell.indexOf("nonfarm") !== -1 || firstCell.indexOf("non farm") !== -1) {
       result.nonFarmInterventions = parseInterventions(data);
+    } else if (firstCell.indexOf("sisd") !== -1) {
+      result.sisdInterventions = parseSisd(data);
     } else if (firstCell.indexOf("fi") !== -1) {
       result.fiInterventions = parseInterventions(data);
     }
@@ -35,6 +38,7 @@ function doGet(e) {
   var validPairs = buildValidPairs(result.blocks);
   result.farmInterventions = filterInterventions(result.farmInterventions, validPairs);
   result.nonFarmInterventions = filterInterventions(result.nonFarmInterventions, validPairs);
+  result.sisdInterventions = filterInterventions(result.sisdInterventions, validPairs);
   result.fiInterventions = filterInterventions(result.fiInterventions, validPairs);
 
   for (var b = 0; b < result.blocks.length; b++) {
@@ -84,17 +88,25 @@ function findCol(header, keywords) {
   return -1;
 }
 
+function findHeaderRowIndex(data) {
+  for (var i = 0; i < data.length; i++) {
+    var row = data[i] || [];
+    if (findCol(row, ["block"]) !== -1 && findCol(row, ["clf name", "clf"]) !== -1) return i;
+  }
+  return -1;
+}
+
 function parseBasicDetails(data) {
-  var header = data[0];
+  var headerIndex = findHeaderRowIndex(data);
+  if (headerIndex === -1) return [];
+  var header = data[headerIndex];
   var colBlock = findCol(header, ["block"]);
   var colCLF = findCol(header, ["clf name", "clf"]);
   var colVO = findCol(header, ["vo"]);
   var colSHG = findCol(header, ["shg"]);
 
-  if (colBlock === -1 || colCLF === -1) return [];
-
   var blocks = {};
-  for (var i = 1; i < data.length; i++) {
+  for (var i = headerIndex + 1; i < data.length; i++) {
     var row = data[i];
     var blockName = (row[colBlock] || "").toString().trim();
     var clfName = (row[colCLF] || "").toString().trim();
@@ -115,7 +127,9 @@ function parseBasicDetails(data) {
 }
 
 function parseInterventions(data) {
-  var header = data[0];
+  var headerIndex = findHeaderRowIndex(data);
+  if (headerIndex === -1) return [];
+  var header = data[headerIndex];
   var colBlock = findCol(header, ["block"]);
   var colCLF = findCol(header, ["clf name", "clf"]);
   var colName = findCol(header, ["intervention", "name of intervention"]);
@@ -125,7 +139,7 @@ function parseInterventions(data) {
   var hasBlockCol = colBlock !== -1 && colCLF !== -1;
   var results = [];
 
-  for (var i = 1; i < data.length; i++) {
+  for (var i = headerIndex + 1; i < data.length; i++) {
     var row = data[i];
     if (!row) continue;
 
@@ -153,6 +167,44 @@ function parseInterventions(data) {
       name: intervention,
       brief: brief,
       image: convertDriveLink(image)
+    });
+  }
+  return results;
+}
+
+function parseSisd(data) {
+  var headerIndex = findHeaderRowIndex(data);
+  if (headerIndex === -1) return [];
+  var header = data[headerIndex];
+  var colBlock = findCol(header, ["block"]);
+  var colCLF = findCol(header, ["clf name", "clf"]);
+  var colChild = findCol(header, ["child care"]);
+  var colTransit = findCol(header, ["transit home"]);
+  var colFollowUp = findCol(header, ["follow up", "pregnant"]);
+  var colVRF = findCol(header, ["vrf", "sam/mam"]);
+
+  var results = [];
+  for (var i = headerIndex + 1; i < data.length; i++) {
+    var row = data[i];
+    if (!row) continue;
+
+    var block = (row[colBlock] || "").toString().trim();
+    var clfName = (row[colCLF] || "").toString().trim();
+    var childCare = colChild !== -1 ? (row[colChild] || "").toString().trim() : "";
+    var transitHome = colTransit !== -1 ? (row[colTransit] || "").toString().trim() : "";
+    var followUp = colFollowUp !== -1 ? (row[colFollowUp] || "").toString().trim() : "";
+    var vrf = colVRF !== -1 ? (row[colVRF] || "").toString().trim() : "";
+
+    if (!block || !clfName || isJunkName(clfName)) continue;
+    if (!childCare && !transitHome && !followUp && !vrf) continue;
+
+    results.push({
+      block: block,
+      clfName: clfName,
+      childCare: childCare,
+      transitHome: transitHome,
+      followUp: followUp,
+      vrf: vrf
     });
   }
   return results;
