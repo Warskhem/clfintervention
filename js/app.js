@@ -11,6 +11,16 @@ function initSummary() {
   const stats = document.getElementById('summaryStats');
   const { summary } = dashboardData;
 
+  let bankLoans = 0;
+  let bcTotal = 0;
+  dashboardData.blocks.forEach(block => {
+    block.clfs.forEach(clf => {
+      const fi = clf.interventions.fi;
+      bankLoans += Number(fi.bankLoan) || 0;
+      bcTotal += Number(fi.bc) || 0;
+    });
+  });
+
   stats.innerHTML = `
     <div class="stat-item">
       <span class="stat-value">${summary.blocks}</span>
@@ -27,6 +37,14 @@ function initSummary() {
     <div class="stat-item">
       <span class="stat-value">${summary.shgs.toLocaleString()}</span>
       <span class="stat-label">SHGs</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-value">${bankLoans.toLocaleString()}</span>
+      <span class="stat-label">Bank Loans</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-value">${bcTotal.toLocaleString()}</span>
+      <span class="stat-label">BCs</span>
     </div>
   `;
 }

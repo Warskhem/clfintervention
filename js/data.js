@@ -63,6 +63,61 @@ const fallbackData = {
   ]
 };
 
+// FI intervention data sourced from the FIIntervention CSV (Saksham Centre)
+const fiData = [
+    { block: "Mawshynrut", clf: "JINGKIENG BASKHEM CLF NONGJRI CIRCLE", cif: 0, vrf: 0, startup: 200000, loans: 45, bc: 2 },
+    { block: "Mawshynrut", clf: "KURANGSAL CLF WOMEN MULTI PURPOSE COOPERATIVE SOCIETY", cif: 1350000, vrf: 0, startup: 350000, loans: 44, bc: 1 },
+    { block: "Mawshynrut", clf: "MAWJAM CLF PORLA", cif: 3570000, vrf: 0, startup: 350000, loans: 1, bc: 0 },
+    { block: "Mawshynrut", clf: "NONGTREI ASOR CLF", cif: 0, vrf: 0, startup: 200000, loans: 39, bc: 0 },
+    { block: "Mawshynrut", clf: "NONGTREI IONG BI CLUSTER LEVEL FEDERATION UMSOHPIENG", cif: 600000, vrf: 0, startup: 350000, loans: 45, bc: 2 },
+    { block: "Mawshynrut", clf: "RYMPEI BAIAR CLUSTER LEVEL FEDERATION CLF", cif: 18590000, vrf: 0, startup: 350000, loans: 116, bc: 3 },
+    { block: "Mawshynrut", clf: "SAINDUR IA KA LAWEI CLF MULTIPURPOSE COOPERATIVE SOCIETY LTD", cif: 5610000, vrf: 0, startup: 350000, loans: 30, bc: 1 },
+    { block: "Nongstoin", clf: "15 SHNONG CLUSTER LEVEL FEDERATION", cif: 5910000, vrf: 0, startup: 350000, loans: 72, bc: 3 },
+    { block: "Nongstoin", clf: "DAKA BANTEI CLF", cif: 110000, vrf: 0, startup: 200000, loans: 33, bc: 4 },
+    { block: "Nongstoin", clf: "IAIKYRSOI CLF", cif: 0, vrf: 0, startup: 350000, loans: 62, bc: 2 },
+    { block: "Nongstoin", clf: "IAINEHSKHEM CLF", cif: 0, vrf: 0, startup: 350000, loans: 24, bc: 1 },
+    { block: "Nongstoin", clf: "KHATWEI CLF PYNDENGREI", cif: 6250000, vrf: 0, startup: 350000, loans: 48, bc: 2 },
+    { block: "Nongstoin", clf: "KHAW KYLLA CLF MAWEIT", cif: 0, vrf: 0, startup: 350000, loans: 27, bc: 2 },
+    { block: "Nongstoin", clf: "KYNHUN SAINDUR CLF MAWIAWET", cif: 8390000, vrf: 0, startup: 200000, loans: 41, bc: 1 },
+    { block: "Nongstoin", clf: "KYRSHAN IA KA LAWEI CLF", cif: 0, vrf: 0, startup: 0, loans: 65, bc: 3 },
+    { block: "Nongstoin", clf: "KYRSIEW CLF RISIANG", cif: 4020000, vrf: 0, startup: 350000, loans: 25, bc: 0 },
+    { block: "Nongstoin", clf: "MAWJAMBASKHEM CLF", cif: 7670000, vrf: 0, startup: 350000, loans: 67, bc: 2 },
+    { block: "Nongstoin", clf: "SHAT JINSHAICLF LAITKSEH CLUSTER", cif: 0, vrf: 0, startup: 200000, loans: 79, bc: 2 },
+    { block: "Nongstoin", clf: "THWEIBIAR CLF NONGSTOIN", cif: 11550000, vrf: 0, startup: 350000, loans: 131, bc: 4 },
+    { block: "Nongstoin", clf: "WANLAM JONGCHAI CLF WAHLYNGDOH", cif: 0, vrf: 0, startup: 350000, loans: 5, bc: 1 },
+    { block: "Rambrai", clf: "IATREILANG CLF MAWTHIR", cif: 2250000, vrf: 0, startup: 350000, loans: 15, bc: 2 },
+    { block: "Rambrai", clf: "KHADHYNNIEW SHNONG CLUSTER LEVEL FEDERATION", cif: 10040000, vrf: 0, startup: 350000, loans: 50, bc: 1 },
+    { block: "Rambrai", clf: "SANDAKA CLF MAWDET", cif: 0, vrf: 0, startup: 0, loans: 47, bc: 2 },
+    { block: "Rambrai", clf: "TBEHJINGSHAI CLF MAWDOH", cif: 0, vrf: 0, startup: 350000, loans: 25, bc: 1 },
+    { block: "Rambrai", clf: "WOMEN UNITED CLF RAMBRAI", cif: 5990000, vrf: 0, startup: 350000, loans: 79, bc: 1 },
+    { block: "RI-Muliang", clf: "BIRONGDIK CLF", cif: 7810000, vrf: 0, startup: 350000, loans: 73, bc: 1 },
+    { block: "RI-Muliang", clf: "IATYLLI BAN ROI CLF", cif: 5260000, vrf: 0, startup: 350000, loans: 64, bc: 1 },
+    { block: "RI-Muliang", clf: "TENGKAME CLF", cif: 7210000, vrf: 0, startup: 350000, loans: 69, bc: 1 },
+    { block: "RI-Muliang", clf: "TWAR BAN SAN CLF KYRDUM", cif: 4070000, vrf: 0, startup: 350000, loans: 58, bc: 2 },
+    { block: "Shallang", clf: "NIASON CLF UMDANG", cif: 2030000, vrf: 0, startup: 350000, loans: 44, bc: 1 }
+];
+
+function fillValue(current, fallback) {
+  return (current === undefined || current === null || current === "") ? fallback : current;
+}
+
+function applyFiData(blocks) {
+  if (!blocks || blocks.length === 0) return;
+  blocks.forEach(block => {
+    block.clfs.forEach(clf => {
+      const row = fiData.find(r => r.block === block.name && r.clf === clf.name);
+      if (!row) return;
+      const fi = clf.interventions.fi;
+      if (!fi.name) fi.name = "Saksham Centre";
+      fi.cifFund = fillValue(fi.cifFund, row.cif);
+      fi.vrfFund = fillValue(fi.vrfFund, row.vrf);
+      fi.startupFund = fillValue(fi.startupFund, row.startup);
+      fi.bankLoan = fillValue(fi.bankLoan, row.loans);
+      fi.bc = fillValue(fi.bc, row.bc);
+    });
+  });
+}
+
 let dashboardData = null;
 
 async function fetchLiveData() {
@@ -140,7 +195,15 @@ function findInterventionForCLF(interventions, blockName, clfName) {
         return {
           name: intv.name,
           brief: intv.brief || "",
-          image: intv.image || ""
+          image: intv.image || "",
+          cifFund: intv.cifFund || 0,
+          vrfFund: intv.vrfFund || 0,
+          startupFund: intv.startupFund || 0,
+          bankLoan: intv.bankLoan || 0,
+          bc: intv.bc || 0,
+          pmjjy: intv.pmjjy || "No Data",
+          pmsby: intv.pmsby || "No Data",
+          mhis: intv.mhis || "No Data"
         };
       }
     }
@@ -151,5 +214,6 @@ function findInterventionForCLF(interventions, blockName, clfName) {
 
 async function initDashboard() {
   dashboardData = await fetchLiveData();
+  applyFiData(dashboardData.blocks);
   return dashboardData;
 }

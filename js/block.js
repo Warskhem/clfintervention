@@ -60,6 +60,16 @@ function renderCLFs(block) {
             <span class="count-value">${clf.shg}</span>
             <span class="count-label">SHGs</span>
           </div>
+          <div class="count-badge loan">
+            <span class="count-icon">&#x1F4B3;</span>
+            <span class="count-value">${clf.interventions.fi.bankLoan || 0}</span>
+            <span class="count-label">Bank Loans</span>
+          </div>
+          <div class="count-badge bc">
+            <span class="count-icon">&#x1F3E6;</span>
+            <span class="count-value">${clf.interventions.fi.bc || 0}</span>
+            <span class="count-label">BCs</span>
+          </div>
         </div>
       </div>
       <div class="intervention-buttons">
@@ -149,10 +159,12 @@ function showInterventionModal(clf, type) {
           <span class="detail-label">Intervention Name:</span>
           <span class="detail-value">${intervention.name}</span>
         </div>
+        ${intervention.brief ? `
         <div class="detail-row">
           <span class="detail-label">Brief on Programme:</span>
           <span class="detail-value">${intervention.brief}</span>
-        </div>
+        </div>` : ''}
+        ${type === 'fi' ? buildFiDetails(intervention) : ''}
         <div class="detail-image">
           ${imageHtml}
         </div>
@@ -161,6 +173,61 @@ function showInterventionModal(clf, type) {
   }
 
   modal.classList.add('active');
+}
+
+function formatMoney(value) {
+  return value ? '₹' + Number(value).toLocaleString('en-IN') : '&mdash;';
+}
+
+function buildFiDetails(fi) {
+  const hasFunds = fi.cifFund || fi.vrfFund || fi.startupFund;
+  const hasCoverage = fi.bankLoan || fi.bc;
+
+  const fundsHtml = hasFunds ? `
+    <div class="detail-section">
+      <div class="detail-section-title">Fund Details</div>
+      <div class="fund-grid">
+        <div class="fund-tile">
+          <span class="fund-label">CIF Fund</span>
+          <span class="fund-value">${formatMoney(fi.cifFund)}</span>
+        </div>
+        <div class="fund-tile">
+          <span class="fund-label">VRF Fund</span>
+          <span class="fund-value">${formatMoney(fi.vrfFund)}</span>
+        </div>
+        <div class="fund-tile">
+          <span class="fund-label">Start up Fund</span>
+          <span class="fund-value">${formatMoney(fi.startupFund)}</span>
+        </div>
+      </div>
+    </div>` : '';
+
+  const coverageHtml = hasCoverage ? `
+    <div class="detail-section">
+      <div class="detail-section-title">Coverage Details</div>
+      <div class="detail-row">
+        <span class="detail-label">SHGs with Bank Loan:</span>
+        <span class="detail-value">${fi.bankLoan || 0}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">PMJJY Members:</span>
+        <span class="detail-value">${fi.pmjjy || 'No Data'}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">PMSBY Members:</span>
+        <span class="detail-value">${fi.pmsby || 'No Data'}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">MHIS Members:</span>
+        <span class="detail-value">${fi.mhis || 'No Data'}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">BCs at CLF:</span>
+        <span class="detail-value">${fi.bc || 0}</span>
+      </div>
+    </div>` : '';
+
+  return fundsHtml + coverageHtml;
 }
 
 function closeModal() {
