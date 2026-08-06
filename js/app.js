@@ -36,7 +36,7 @@ function initSummary() {
     </div>
     <div class="stat-item">
       <span class="stat-value">${summary.shgs.toLocaleString()}</span>
-      <span class="stat-label">SHGs</span>
+      <span class="stat-label">Active SHGs</span>
     </div>
     <div class="stat-item">
       <span class="stat-value">${bankLoans.toLocaleString()}</span>
@@ -97,6 +97,15 @@ function initMapInteractions() {
   });
 }
 
+function escapeHtml(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function showBlockTooltip(element, block) {
   let tooltip = document.getElementById('tooltip');
   if (!tooltip) {
@@ -106,15 +115,17 @@ function showBlockTooltip(element, block) {
     document.body.appendChild(tooltip);
   }
 
-  const totalVo = block.clfs.reduce((sum, c) => sum + c.vo, 0);
-  const totalShg = block.clfs.reduce((sum, c) => sum + c.shg, 0);
+  const totalVo = block.clfs.reduce((sum, c) => sum + (c.vo || 0), 0);
+  const totalShg = block.shgTotal != null ? block.shgTotal : block.clfs.reduce((sum, c) => sum + (c.shg || 0), 0);
+  const totalVillages = block.clfs.reduce((sum, c) => sum + (c.villages || 0), 0);
 
   tooltip.innerHTML = `
-    <div class="tooltip-title">${block.name}</div>
+    <div class="tooltip-title">${escapeHtml(block.name)} Block</div>
     <div class="tooltip-stats">
       <span>${block.clfs.length} CLFs</span>
+      <span>${totalVillages} Villages</span>
       <span>${totalVo} VOs</span>
-      <span>${totalShg} SHGs</span>
+      <span>${totalShg} Active SHGs</span>
     </div>
   `;
 
