@@ -12,14 +12,16 @@ function initSummary() {
   const { summary } = dashboardData;
 
   let bankLoans = 0;
-  let bcTotal = 0;
   dashboardData.blocks.forEach(block => {
     block.clfs.forEach(clf => {
       const fi = clf.interventions.fi;
       bankLoans += Number(fi.bankLoan) || 0;
-      bcTotal += Number(fi.bc) || 0;
     });
   });
+
+  const totalActiveVo = dashboardData.blocks.reduce((sum, b) => sum + (b.activeVo || 0), 0);
+  const totalLooseVo = dashboardData.blocks.reduce((sum, b) => sum + (b.looseVo || 0), 0);
+  const totalActiveNonLooseVo = totalActiveVo - totalLooseVo;
 
   stats.innerHTML = `
     <div class="stat-item">
@@ -31,20 +33,24 @@ function initSummary() {
       <span class="stat-label">CLFs</span>
     </div>
     <div class="stat-item">
-      <span class="stat-value">${summary.vos.toLocaleString()}</span>
-      <span class="stat-label">VOs</span>
-    </div>
-    <div class="stat-item">
       <span class="stat-value">${summary.shgs.toLocaleString()}</span>
       <span class="stat-label">Active SHGs</span>
     </div>
     <div class="stat-item">
-      <span class="stat-value">${bankLoans.toLocaleString()}</span>
-      <span class="stat-label">Bank Loans</span>
+      <span class="stat-value">${totalActiveVo.toLocaleString()}</span>
+      <span class="stat-label">Active VOs</span>
     </div>
     <div class="stat-item">
-      <span class="stat-value">${bcTotal.toLocaleString()}</span>
-      <span class="stat-label">BCs</span>
+      <span class="stat-value">${totalActiveNonLooseVo.toLocaleString()}</span>
+      <span class="stat-label">Active VOs (Non-Loose)</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-value">${totalLooseVo.toLocaleString()}</span>
+      <span class="stat-label">Loose VOs</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-value">${bankLoans.toLocaleString()}</span>
+      <span class="stat-label">Bank Loans</span>
     </div>
   `;
 }
@@ -124,7 +130,8 @@ function showBlockTooltip(element, block) {
     <div class="tooltip-stats">
       <span>${block.clfs.length} CLFs</span>
       <span>${totalVillages} Villages</span>
-      <span>${totalVo} VOs</span>
+      <span>${block.activeVo || 0} Active VOs</span>
+      <span>${block.looseVo || 0} Loose VOs</span>
       <span>${totalShg} Active SHGs</span>
     </div>
   `;

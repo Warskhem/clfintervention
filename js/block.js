@@ -19,7 +19,6 @@ document.addEventListener('DOMContentLoaded', async function() {
   document.title = `${block.name} - WKH Dashboard`;
   document.getElementById('blockName').textContent = block.name + ' Block';
 
-  const totalVo = block.clfs.reduce((sum, c) => sum + c.vo, 0);
   const totalShg = block.shgTotal != null ? block.shgTotal : block.clfs.reduce((sum, c) => sum + (c.shg || 0), 0);
   const totalVillages = block.clfs.reduce((sum, c) => sum + (c.villages || 0), 0);
 
@@ -34,8 +33,12 @@ document.addEventListener('DOMContentLoaded', async function() {
       <span class="stat-label">Villages</span>
     </div>
     <div class="stat-item">
-      <span class="stat-value">${totalVo}</span>
-      <span class="stat-label">VOs</span>
+      <span class="stat-value">${block.activeVo || 0}</span>
+      <span class="stat-label">Active VOs</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-value">${block.looseVo || 0}</span>
+      <span class="stat-label">Loose VOs</span>
     </div>
     <div class="stat-item">
       <span class="stat-value">${totalShg}</span>

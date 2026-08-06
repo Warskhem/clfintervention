@@ -706,6 +706,34 @@ function applyActiveShg(data) {
   data.summary.shgs = data.blocks.reduce((sum, b) => sum + (b.shgTotal || 0), 0);
 }
 
+// Active & Loose VO counts from the D03 VO Details export (WKH, ML) per block.
+// Loose VO = VO with only 1 or 2 mapped SHGs (all are Active in the D03 data).
+const activeVoByBlock = {
+  'Mawshynrut': 123,
+  'Nongstoin': 212,
+  'Rambrai': 80,
+  'RI-Muliang': 62,
+  'Shallang': 40
+};
+
+const looseVoByBlock = {
+  'Mawshynrut': 16,
+  'Nongstoin': 24,
+  'Rambrai': 6,
+  'RI-Muliang': 6,
+  'Shallang': 4
+};
+
+function applyVoData(blocks) {
+  if (!blocks || blocks.length === 0) return;
+  blocks.forEach(block => {
+    const active = activeVoByBlock[block.name];
+    const loose = looseVoByBlock[block.name];
+    block.activeVo = active !== undefined ? active : 0;
+    block.looseVo = loose !== undefined ? loose : 0;
+  });
+}
+
 async function fetchLiveData() {
   // 1) Directly from the Google Spreadsheet (keeps the dashboard in sync with the sheet)
   try {
@@ -748,5 +776,6 @@ async function initDashboard() {
   dashboardData = await fetchLiveData();
   applyActiveShg(dashboardData);
   applyFiData(dashboardData.blocks);
+  applyVoData(dashboardData.blocks);
   return dashboardData;
 }
