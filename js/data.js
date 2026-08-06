@@ -271,6 +271,14 @@ function parseInterventionRows(rows, validPairs) {
   const colName = findColumn(headers, ['intervention', 'name of intervention']);
   const colBrief = findColumn(headers, ['brief']);
   const colImage = findColumn(headers, ['image', 'link']);
+  const colCIF = findColumn(headers, ['cif']);
+  const colVRF = findColumn(headers, ['vrf']);
+  const colStartup = findColumn(headers, ['start up', 'startup', 'start-up']);
+  const colLoan = findColumn(headers, ['bank loan']);
+  const colBC = findColumn(headers, ['bc at the clf', 'bc']);
+  const colPMJJY = findColumn(headers, ['pmjjy']);
+  const colPMSBY = findColumn(headers, ['pmsby']);
+  const colMHIS = findColumn(headers, ['mhis']);
 
   const results = [];
   for (let i = headerIndex + 1; i < rows.length; i++) {
@@ -286,10 +294,32 @@ function parseInterventionRows(rows, validPairs) {
       const name = clean(row[colName]);
       const brief = clean(row[colBrief]);
       const image = normalizeImageUrl(clean(row[colImage]));
+      const cifFund = colCIF !== -1 ? toInt(row[colCIF]) : undefined;
+      const vrfFund = colVRF !== -1 ? toInt(row[colVRF]) : undefined;
+      const startupFund = colStartup !== -1 ? toInt(row[colStartup]) : undefined;
+      const bankLoan = colLoan !== -1 ? toInt(row[colLoan]) : undefined;
+      const bc = colBC !== -1 ? toInt(row[colBC]) : undefined;
+      const pmjjy = colPMJJY !== -1 ? clean(row[colPMJJY]) : undefined;
+      const pmsby = colPMSBY !== -1 ? clean(row[colPMSBY]) : undefined;
+      const mhis = colMHIS !== -1 ? clean(row[colMHIS]) : undefined;
 
-      if (!name && !brief && !image) continue;
+      if (!name && !brief && !image && !cifFund && !vrfFund && !startupFund && !bankLoan && !bc) continue;
 
-      results.push({ block: block, clfName: clfName, name: name, brief: brief, image: image });
+      results.push({
+        block: block,
+        clfName: clfName,
+        name: name,
+        brief: brief,
+        image: image,
+        cifFund: cifFund,
+        vrfFund: vrfFund,
+        startupFund: startupFund,
+        bankLoan: bankLoan,
+        bc: bc,
+        pmjjy: pmjjy,
+        pmsby: pmsby,
+        mhis: mhis
+      });
     }
   }
   return results;

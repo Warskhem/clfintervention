@@ -200,10 +200,7 @@ function formatMoney(value) {
 }
 
 function buildFiDetails(fi) {
-  const hasFunds = fi.cifFund || fi.vrfFund || fi.startupFund;
-  const hasCoverage = fi.bankLoan || fi.bc;
-
-  const fundsHtml = hasFunds ? `
+  return `
     <div class="detail-section">
       <div class="detail-section-title">Fund Details</div>
       <div class="fund-grid">
@@ -220,9 +217,7 @@ function buildFiDetails(fi) {
           <span class="fund-value">${formatMoney(fi.startupFund)}</span>
         </div>
       </div>
-    </div>` : '';
-
-  const coverageHtml = hasCoverage ? `
+    </div>
     <div class="detail-section">
       <div class="detail-section-title">Coverage Details</div>
       <div class="detail-row">
@@ -245,9 +240,7 @@ function buildFiDetails(fi) {
         <span class="detail-label">BCs at CLF:</span>
         <span class="detail-value">${fi.bc || 0}</span>
       </div>
-    </div>` : '';
-
-  return fundsHtml + coverageHtml;
+    </div>`;
 }
 
 function escapeHtml(value) {
